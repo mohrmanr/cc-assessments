@@ -1,0 +1,8 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /assessment-portal/
+
+    # Send all requests into Laravel's public web root.
+    RewriteCond %{REQUEST_URI} !^/assessment-portal/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
