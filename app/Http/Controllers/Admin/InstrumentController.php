@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Instrument;
+use App\Support\SurveyScaleConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -30,11 +31,14 @@ class InstrumentController extends Controller
             $responseLabels = [0 => 'No', 1 => 'Yes'];
         }
 
+        $scaleConfig = SurveyScaleConfig::resolve($scoringConfig, is_array($surveyConfig) ? $surveyConfig : null);
+
         return view('dashboards.instrument-edit', [
             'instrument' => $instrument,
             'items' => $items,
             'itemAttributes' => $itemAttributes,
             'responseLabels' => $responseLabels,
+            'scaleConfig' => $scaleConfig,
             'instructions' => $scoringConfig['instructions']
                 ?? ($surveyConfig['instructions'] ?? 'Select one answer per question.'),
             'description' => $scoringConfig['description']
@@ -51,13 +55,31 @@ class InstrumentController extends Controller
             'instructions' => ['required', 'string', 'max:2000'],
             'description' => ['nullable', 'string', 'max:2000'],
             'is_active' => ['sometimes', 'boolean'],
+            'answer_type' => ['required', 'in:custom,buckets,slider'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9_]+$/'],
             'items.*.text' => ['required', 'string', 'max:2000'],
-            'response_labels' => ['required', 'array', 'min:1'],
-            'response_labels.*.value' => ['required', 'integer', 'min:0', 'max:99'],
-            'response_labels.*.label' => ['required', 'string', 'max:255'],
         ];
+
+        $answerType = $request->input('answer_type', 'custom');
+
+        if ($answerType === 'custom') {
+            $rules['response_labels'] = ['required', 'array', 'min:1'];
+            $rules['response_labels.*.value'] = ['required', 'integer', 'min:0', 'max:999'];
+            $rules['response_labels.*.label'] = ['required', 'string', 'max:255'];
+        } elseif ($answerType === 'buckets') {
+            $rules['bucket_min'] = ['required', 'integer', 'min:0', 'max:999'];
+            $rules['bucket_max'] = ['required', 'integer', 'min:0', 'max:999'];
+            $rules['bucket_count'] = ['required', 'integer', 'min:2', 'max:21'];
+            $rules['bucket_label_suffix'] = ['nullable', 'string', 'max:20'];
+        } else {
+            $rules['slider_min'] = ['required', 'integer', 'min:0', 'max:999'];
+            $rules['slider_max'] = ['required', 'integer', 'min:0', 'max:999'];
+            $rules['slider_step'] = ['required', 'integer', 'min:1', 'max:100'];
+            $rules['scale_label_left'] = ['nullable', 'string', 'max:255'];
+            $rules['scale_label_center'] = ['nullable', 'string', 'max:255'];
+            $rules['scale_label_right'] = ['nullable', 'string', 'max:255'];
+        }
 
         foreach ($itemAttributes as $attribute) {
             $key = $attribute['key'];
@@ -86,13 +108,60 @@ class InstrumentController extends Controller
             ->values()
             ->all();
 
-        $responseLabels = collect($validated['response_labels'])
-            ->mapWithKeys(fn (array $row): array => [(string) $row['value'] => trim($row['label'])])
-            ->all();
+        if ($answerType === 'custom') {
+            $responseLabels = collect($validated['response_labels'])
+                ->mapWithKeys(fn (array $row): array => [(string) $row['value'] => trim($row['label'])])
+                ->all();
+            $scoringConfig['scale_type'] = 'discrete';
+            $scoringConfig['scale_mode'] = 'manual';
+            $scoringConfig['response_labels'] = $responseLabels;
+            unset($scoringConfig['bucket_min'], $scoringConfig['bucket_max'], $scoringConfig['bucket_count'], $scoringConfig['bucket_label_suffix']);
+            unset($scoringConfig['min'], $scoringConfig['max'], $scoringConfig['step'], $scoringConfig['scale_labels']);
+        } elseif ($answerType === 'buckets') {
+            if ((int) $validated['bucket_min'] > (int) $validated['bucket_max']) {
+                return back()
+                    ->withErrors(['bucket_max' => 'Maximum must be greater than or equal to minimum.'])
+                    ->withInput();
+            }
+
+            $suffix = trim($validated['bucket_label_suffix'] ?? '');
+            $responseLabels = SurveyScaleConfig::generateBucketLabels(
+                (int) $validated['bucket_min'],
+                (int) $validated['bucket_max'],
+                (int) $validated['bucket_count'],
+                $suffix
+            );
+
+            $scoringConfig['scale_type'] = 'discrete';
+            $scoringConfig['scale_mode'] = 'buckets';
+            $scoringConfig['bucket_min'] = (int) $validated['bucket_min'];
+            $scoringConfig['bucket_max'] = (int) $validated['bucket_max'];
+            $scoringConfig['bucket_count'] = (int) $validated['bucket_count'];
+            $scoringConfig['bucket_label_suffix'] = $suffix;
+            $scoringConfig['response_labels'] = $responseLabels;
+            unset($scoringConfig['min'], $scoringConfig['max'], $scoringConfig['step'], $scoringConfig['scale_labels']);
+        } else {
+            $scoringConfig['scale_type'] = 'continuous';
+            $scoringConfig['scale_mode'] = 'manual';
+            $scoringConfig['min'] = (int) $validated['slider_min'];
+            $scoringConfig['max'] = (int) $validated['slider_max'];
+            $scoringConfig['step'] = (int) $validated['slider_step'];
+            $scoringConfig['scale_labels'] = array_filter([
+                'left' => trim($validated['scale_label_left'] ?? ''),
+                'center' => trim($validated['scale_label_center'] ?? ''),
+                'right' => trim($validated['scale_label_right'] ?? ''),
+            ], fn (string $value): bool => $value !== '');
+            unset($scoringConfig['response_labels'], $scoringConfig['bucket_min'], $scoringConfig['bucket_max'], $scoringConfig['bucket_count'], $scoringConfig['bucket_label_suffix']);
+
+            if ($scoringConfig['min'] >= $scoringConfig['max']) {
+                return back()
+                    ->withErrors(['slider_max' => 'Slider maximum must be greater than minimum.'])
+                    ->withInput();
+            }
+        }
 
         $scoringConfig['instructions'] = trim($validated['instructions']);
         $scoringConfig['description'] = trim($validated['description'] ?? '');
-        $scoringConfig['response_labels'] = $responseLabels;
         $scoringConfig['item_attributes'] = $itemAttributes;
 
         $instrument->update([
@@ -103,7 +172,7 @@ class InstrumentController extends Controller
 
         return redirect()
             ->route('admin.instruments.edit', $instrument)
-            ->with('status', "Questions updated for {$instrument->name}.");
+            ->with('status', "Assessment updated for {$instrument->name}.");
     }
 
     public function importQuestions(Request $request, Instrument $instrument): RedirectResponse

@@ -176,6 +176,7 @@
                                 <th class="py-2 pr-4">Slug</th>
                                 <th class="py-2 pr-4">Version</th>
                                 <th class="py-2 pr-4">Domain</th>
+                                <th class="py-2 pr-4">Description</th>
                                 <th class="py-2 pr-4">Items</th>
                                 <th class="py-2 pr-4">Status</th>
                                 <th class="py-2 pr-4">Actions</th>
@@ -183,11 +184,23 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse ($instruments as $instrument)
+                                @php
+                                    $instrumentDescription = $instrument->scoring_config['description']
+                                        ?? config("portal.baseline_surveys.{$instrument->slug}.description")
+                                        ?? '';
+                                @endphp
                                 <tr>
                                     <td class="py-2 pr-4 font-medium text-gray-900">{{ $instrument->name }}</td>
                                     <td class="py-2 pr-4 text-gray-600">{{ $instrument->slug }}</td>
                                     <td class="py-2 pr-4 text-gray-600">{{ $instrument->version }}</td>
                                     <td class="py-2 pr-4 text-gray-600">{{ $instrument->domain }}</td>
+                                    <td class="py-2 pr-4 text-gray-600 max-w-xs">
+                                        @if ($instrumentDescription !== '')
+                                            <span title="{{ $instrumentDescription }}">{{ Str::limit($instrumentDescription, 80) }}</span>
+                                        @else
+                                            <span class="text-gray-400">Not set</span>
+                                        @endif
+                                    </td>
                                     <td class="py-2 pr-4 text-gray-600">{{ count($instrument->items ?? []) }}</td>
                                     <td class="py-2 pr-4">
                                         @if ($instrument->is_active)
@@ -198,13 +211,13 @@
                                     </td>
                                     <td class="py-2 pr-4">
                                         <a href="{{ route('admin.instruments.edit', $instrument) }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
-                                            Edit questions
+                                            Edit assessment
                                         </a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="py-3 text-gray-500">No assessments configured yet.</td>
+                                    <td colspan="8" class="py-3 text-gray-500">No assessments configured yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

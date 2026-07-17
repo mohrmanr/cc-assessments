@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\AssessmentCompletedNotification;
 use App\Services\InstrumentScorer;
 use App\Services\TreatmentRecommendationService;
+use App\Support\SurveyScaleConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
@@ -103,6 +104,7 @@ class AssessmentController extends Controller
         [$items, $labels] = $this->resolveSurveyContent($instrument, $survey);
         $itemIds = collect($items)->pluck('id')->all();
         $fields = $survey['fields'] ?? [];
+        $usesContinuousScale = SurveyScaleConfig::usesContinuousScale($survey, $instrument->scoring_config ?? []);
         $allowedValues = array_map('intval', array_keys($labels));
 
         $rules = [];
@@ -117,7 +119,14 @@ class AssessmentController extends Controller
             $rules[$field['id']] = $fieldRules;
         }
         foreach ($itemIds as $id) {
-            $rules[$id] = ['required', 'integer', Rule::in($allowedValues)];
+            if ($usesContinuousScale) {
+                $scale = SurveyScaleConfig::resolve($instrument->scoring_config ?? [], $survey);
+                $min = $scale['min'];
+                $max = $scale['max'];
+                $rules[$id] = ['required', 'integer', 'min:'.$min, 'max:'.$max];
+            } else {
+                $rules[$id] = ['required', 'integer', Rule::in($allowedValues)];
+            }
         }
         $validated = $request->validate($rules);
         $itemResponses = [];
@@ -187,8 +196,12 @@ class AssessmentController extends Controller
             'route_params' => ['instrument' => $instrument],
             'title' => "{$instrument->name} Baseline Assessment",
             'label' => $instrument->version ?: $instrument->name,
-            'description' => $scoringConfig['description'] ?? "Complete the {$instrument->name} assessment.",
-            'instructions' => $scoringConfig['instructions'] ?? 'Select one answer per question.',
+            'description' => filled($scoringConfig['description'] ?? null)
+                ? $scoringConfig['description']
+                : "Complete the {$instrument->name} assessment.",
+            'instructions' => filled($scoringConfig['instructions'] ?? null)
+                ? $scoringConfig['instructions']
+                : 'Select one answer per question.',
             'intro' => $scoringConfig['intro'] ?? [],
             'closing' => $scoringConfig['closing'] ?? null,
             'fields' => $scoringConfig['fields'] ?? [],
@@ -196,6 +209,11 @@ class AssessmentController extends Controller
             'response_labels' => $labels,
             'default' => $scoringConfig['default'] ?? null,
             'score_max' => $scoringConfig['score_max'] ?? null,
+            'scale_type' => $scoringConfig['scale_type'] ?? 'discrete',
+            'min' => $scoringConfig['min'] ?? 0,
+            'max' => $scoringConfig['max'] ?? 100,
+            'step' => $scoringConfig['step'] ?? 1,
+            'scale_labels' => $scoringConfig['scale_labels'] ?? [],
         ];
     }
 
@@ -205,16 +223,38 @@ class AssessmentController extends Controller
      */
     protected function resolveSurveyContent(Instrument $instrument, array $survey): array
     {
+        $itemsKey = $survey['items_key'] ?? null;
         $items = ! empty($instrument->items)
             ? $instrument->items
-            : ($survey['items'] ?? config("portal.{$survey['items_key']}", []));
+            : ($survey['items'] ?? (is_string($itemsKey) ? config("portal.{$itemsKey}", []) : []));
 
-        $labels = $instrument->scoring_config['response_labels'] ?? null;
+        $scoringConfig = $instrument->scoring_config ?? [];
+        $labels = $scoringConfig['response_labels'] ?? null;
+
         if (! is_array($labels) || $labels === []) {
-            $labels = $survey['response_labels'] ?? config("portal.{$survey['labels_key']}", []);
+            if (SurveyScaleConfig::usesContinuousScale($survey, $scoringConfig)) {
+                $labels = [];
+            } else {
+                $labelsKey = $survey['labels_key'] ?? null;
+                $labels = $survey['response_labels']
+                    ?? (is_string($labelsKey) ? config("portal.{$labelsKey}", []) : []);
+            }
         }
 
-        return [$items, $labels];
+        if (
+            ! SurveyScaleConfig::usesContinuousScale($survey, $scoringConfig)
+            && ($scoringConfig['scale_mode'] ?? null) === 'buckets'
+            && ($labels === [] || $labels === null)
+        ) {
+            $labels = SurveyScaleConfig::generateBucketLabels(
+                (int) ($scoringConfig['bucket_min'] ?? 0),
+                (int) ($scoringConfig['bucket_max'] ?? 100),
+                (int) ($scoringConfig['bucket_count'] ?? 5),
+                (string) ($scoringConfig['bucket_label_suffix'] ?? '')
+            );
+        }
+
+        return [$items, is_array($labels) ? $labels : []];
     }
 
     /**
@@ -225,12 +265,18 @@ class AssessmentController extends Controller
     {
         $config = $instrument->scoring_config ?? [];
 
-        if (! empty($config['instructions'])) {
+        if (filled($config['instructions'] ?? null)) {
             $survey['instructions'] = $config['instructions'];
         }
 
-        if (! empty($config['description'])) {
+        if (filled($config['description'] ?? null)) {
             $survey['description'] = $config['description'];
+        }
+
+        foreach (['scale_type', 'scale_mode', 'min', 'max', 'step', 'scale_labels', 'bucket_min', 'bucket_max', 'bucket_count', 'bucket_label_suffix'] as $key) {
+            if (array_key_exists($key, $config) && $config[$key] !== null && $config[$key] !== []) {
+                $survey[$key] = $config[$key];
+            }
         }
 
         return $survey;

@@ -6,6 +6,10 @@
     <div class="py-12" style="padding-bottom: 5rem;">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white shadow-sm rounded-lg p-6 space-y-6">
+                @if (! empty($survey['description']))
+                    <p class="text-sm text-gray-700">{{ $survey['description'] }}</p>
+                @endif
+
                 @if (! empty($survey['intro']))
                     <div class="space-y-3 text-sm text-gray-700">
                         @foreach ($survey['intro'] as $paragraph)
@@ -15,7 +19,12 @@
                 @endif
 
                 <p class="text-sm text-gray-600">
-                    {{ $survey['instructions'] }} Select one answer per question, then submit.
+                    {{ $survey['instructions'] }}
+                    @if (($survey['scale_type'] ?? 'discrete') === 'continuous')
+                        Set a value from {{ $survey['min'] ?? 0 }} to {{ $survey['max'] ?? 100 }} for each item, then submit.
+                    @else
+                        Select one answer per question, then submit.
+                    @endif
                 </p>
 
                 <form method="POST" action="{{ route($survey['store_route_name']) }}">
@@ -59,20 +68,22 @@
                             <legend style="font-size: 0.875rem; font-weight: 500; color: #111827; margin-bottom: 0.5rem;">
                                 {{ $index + 1 + count($survey['fields'] ?? []) }}. {{ $item['text'] }}
                             </legend>
-                            <div>
-                                @foreach ($labels as $value => $label)
-                                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #374151; margin-bottom: 0.375rem; cursor: pointer;">
-                                        <input
-                                            type="radio"
-                                            name="{{ $item['id'] }}"
-                                            value="{{ $value }}"
-                                            @checked(old($item['id'], $survey['default']) == $value)
-                                            required
-                                        >
-                                        <span>{{ $label }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
+                            @if (($survey['scale_type'] ?? 'discrete') === 'continuous')
+                                <x-survey-continuous-scale
+                                    :name="$item['id']"
+                                    :min="$survey['min'] ?? 0"
+                                    :max="$survey['max'] ?? 100"
+                                    :step="$survey['step'] ?? 1"
+                                    :default="$survey['default'] ?? null"
+                                    :labels="$survey['scale_labels'] ?? []"
+                                />
+                            @else
+                                <x-survey-answer-scale
+                                    :name="$item['id']"
+                                    :labels="$labels"
+                                    :default="$survey['default'] ?? null"
+                                />
+                            @endif
                         </fieldset>
                     @endforeach
 

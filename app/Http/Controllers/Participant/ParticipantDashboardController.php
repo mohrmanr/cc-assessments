@@ -84,6 +84,7 @@ class ParticipantDashboardController extends Controller
         abort_if(! $instrument, 404);
 
         $config = $instrument->scoring_config ?? [];
+        $portalSurvey = config("portal.baseline_surveys.{$instrument->slug}", []);
 
         return [
             'route_name' => 'participant.assessments.show',
@@ -91,7 +92,9 @@ class ParticipantDashboardController extends Controller
             'route_params' => ['instrument' => $instrument],
             'title' => "{$instrument->name} Baseline Assessment",
             'label' => $instrument->version ?: $instrument->name,
-            'description' => $config['description'] ?? "Complete the {$instrument->name} assessment.",
+            'description' => filled($config['description'] ?? null)
+                ? $config['description']
+                : ($portalSurvey['description'] ?? "Complete the {$instrument->name} assessment."),
             'score_max' => $config['score_max'] ?? null,
         ];
     }

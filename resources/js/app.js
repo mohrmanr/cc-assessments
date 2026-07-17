@@ -1,4 +1,5 @@
 import './bootstrap';
+import './survey-continuous-scale';
 
 import Alpine from 'alpinejs';
 

@@ -24,7 +24,7 @@ class EvaluationPortalSeeder extends Seeder
                 'reassessment_schedule' => [
                     ['instrument_slug' => 'pcl-5', 'interval_weeks' => 4],
                     ['instrument_slug' => 'des-ii', 'interval_weeks' => 8],
-                    ['instrument_slug' => 'gse-10', 'interval_weeks' => 8],
+                    ['instrument_slug' => 'gse', 'interval_weeks' => 8],
                 ],
             ]
         );
@@ -36,7 +36,7 @@ class EvaluationPortalSeeder extends Seeder
                 'description' => 'Broader trauma-informed coordination when multiple domains are elevated.',
                 'reassessment_schedule' => [
                     ['instrument_slug' => 'pcl-5', 'interval_weeks' => 8],
-                    ['instrument_slug' => 'gse-10', 'interval_weeks' => 8],
+                    ['instrument_slug' => 'gse', 'interval_weeks' => 8],
                 ],
             ]
         );
@@ -48,7 +48,12 @@ class EvaluationPortalSeeder extends Seeder
                 'version' => 'PCL-5',
                 'domain' => 'ptsd',
                 'items' => config('portal.pcl5_demo_items'),
-                'scoring_config' => ['threshold' => 33, 'method' => 'sum'],
+                'scoring_config' => [
+                    'threshold' => 33,
+                    'method' => 'sum',
+                    'description' => 'Complete the abbreviated PCL-5 to establish your baseline PTSD symptom score.',
+                    'instructions' => 'Over the last month, how much were you bothered by each item below?',
+                ],
             ],
             [
                 'slug' => 'des-ii',
@@ -56,26 +61,47 @@ class EvaluationPortalSeeder extends Seeder
                 'version' => 'DES-II',
                 'domain' => 'dissociation',
                 'items' => config('portal.des_ii_items'),
-                'scoring_config' => ['threshold' => 30, 'method' => 'mean_x100'],
+                'scoring_config' => [
+                    'threshold' => 30,
+                    'method' => 'mean_x100',
+                    'description' => 'Complete the Dissociative Experiences Scale-II.',
+                    'instructions' => 'For each item, use the slider to indicate what percentage of the time the experience happens to you (0–100).',
+                    'scale_type' => 'continuous',
+                    'min' => 0,
+                    'max' => 100,
+                    'step' => 1,
+                    'scale_labels' => [
+                        'left' => '0 Never',
+                        'center' => 'Half the time',
+                        'right' => '100 Always',
+                    ],
+                ],
             ],
             [
                 'slug' => 'ace',
                 'name' => 'Adverse Childhood Experiences Questionnaire',
-                'version' => 'ACE-10',
+                'version' => 'ACE',
                 'domain' => 'ace',
                 'items' => config('portal.ace_items'),
-                'scoring_config' => ['threshold' => 4, 'method' => 'sum'],
+                'scoring_config' => [
+                    'threshold' => 4,
+                    'method' => 'sum',
+                    'description' => 'Complete the Adverse Childhood Experiences assessment.',
+                    'instructions' => 'Below is a list of 10 categories of Adverse Childhood Experiences (ACEs). From the list below, please place a checkmark next to each ACE category that you experienced prior to your 18th birthday. Yes = 1, No = 0.',
+                ],
             ],
             [
-                'slug' => 'gse-10',
+                'slug' => 'gse',
                 'name' => 'General Self-Efficacy Scale',
-                'version' => 'GSE-10',
+                'version' => 'GSE',
                 'domain' => 'self_efficacy',
                 'items' => $this->demoItems('gse', 10, 'I can handle this challenge even when things are difficult.'),
                 'scoring_config' => [
                     'threshold' => 20,
                     'method' => 'sum',
                     'direction' => 'below',
+                    'description' => 'Rate how true each statement is about your ability to handle challenges and setbacks.',
+                    'instructions' => 'Read each statement and select the answer that best describes you.',
                     'response_labels' => [
                         1 => 'Not at all true',
                         2 => 'Hardly true',
@@ -89,7 +115,13 @@ class EvaluationPortalSeeder extends Seeder
                 'name' => 'Experiences in Close Relationships-Revised',
                 'version' => 'ECR-R',
                 'domain' => 'attachment',
-                'scoring_config' => ['threshold' => 4.0, 'method' => 'subscale_mean', 'subscale' => 'anxiety'],
+                'scoring_config' => [
+                    'threshold' => 4.0,
+                    'method' => 'subscale_mean',
+                    'subscale' => 'anxiety',
+                    'description' => 'Complete the Experiences in Close Relationships-Revised attachment assessment.',
+                    'instructions' => 'Select one answer per statement based on how you generally feel in close relationships.',
+                ],
             ],
             [
                 'slug' => 'ecr-rs',
@@ -100,6 +132,8 @@ class EvaluationPortalSeeder extends Seeder
                 'scoring_config' => [
                     'threshold' => 36,
                     'method' => 'sum',
+                    'description' => 'Complete the Experiences in Close Relationships-Revised Short Form for attachment patterns with key relationships.',
+                    'instructions' => 'Select one answer per statement based on how you generally feel in close relationships.',
                     'response_labels' => [
                         1 => 'Strongly disagree',
                         2 => 'Disagree',
@@ -121,6 +155,8 @@ class EvaluationPortalSeeder extends Seeder
                     'threshold' => 36,
                     'method' => 'sum',
                     'direction' => 'below',
+                    'description' => 'Complete the Self Concept Clarity Scale to measure how clearly and consistently you see yourself.',
+                    'instructions' => 'Read each statement and select how often it applies to you.',
                     'response_labels' => [
                         1 => 'Almost never',
                         2 => 'Rarely',
@@ -131,6 +167,11 @@ class EvaluationPortalSeeder extends Seeder
                 ],
             ],
         ];
+
+        Instrument::query()->where('slug', 'gse-10')->update([
+            'slug' => 'gse',
+            'version' => 'GSE',
+        ]);
 
         foreach ($instruments as $instrument) {
             Instrument::query()->updateOrCreate(
@@ -286,13 +327,13 @@ class EvaluationPortalSeeder extends Seeder
         ];
         $scores = [
             'pcl-5' => [42, 36, 39, 24],
-            'gse-10' => [17, 26, 23, 34],
+            'gse' => [17, 26, 23, 34],
             'sccs' => [24, 35, 31, 47],
             'ecr-rs' => [46, 38, 42, 27],
         ];
         $responses = [
             'pcl-5' => [3, 2, 2, 1],
-            'gse-10' => [2, 2, 3, 4],
+            'gse' => [2, 2, 3, 4],
             'sccs' => [2, 3, 4, 4],
             'ecr-rs' => [5, 4, 4, 3],
         ];
@@ -382,13 +423,13 @@ class EvaluationPortalSeeder extends Seeder
         ];
         $scores = [
             'pcl-5' => [46, 31, 57, 42],
-            'gse-10' => [18, 27, 14, 22],
+            'gse' => [18, 27, 14, 22],
             'sccs' => [27, 38, 19, 31],
             'ecr-rs' => [48, 36, 56, 44],
         ];
         $responses = [
             'pcl-5' => [3, 2, 4, 3],
-            'gse-10' => [2, 3, 1, 2],
+            'gse' => [2, 3, 1, 2],
             'sccs' => [2, 3, 2, 3],
             'ecr-rs' => [5, 4, 6, 5],
         ];
