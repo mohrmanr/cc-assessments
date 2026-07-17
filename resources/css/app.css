@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+[x-cloak] { display: none !important; }
+
 @layer components {
     .survey-answer-scale__track {
         @apply flex flex-col gap-2;
