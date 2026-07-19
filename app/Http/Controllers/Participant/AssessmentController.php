@@ -84,7 +84,10 @@ class AssessmentController extends Controller
         }
 
         return view('assessments.survey', [
-            'survey' => $this->mergeInstrumentSurveyCopy($survey, $instrument),
+            'survey' => $this->withSurveyRouteParams(
+                $this->mergeInstrumentSurveyCopy($survey, $instrument),
+                $instrument
+            ),
             'instrument' => $instrument,
             'items' => $items,
             'labels' => $labels,
@@ -277,6 +280,23 @@ class AssessmentController extends Controller
             if (array_key_exists($key, $config) && $config[$key] !== null && $config[$key] !== []) {
                 $survey[$key] = $config[$key];
             }
+        }
+
+        return $survey;
+    }
+
+    /**
+     * @param  array<string, mixed>  $survey
+     * @return array<string, mixed>
+     */
+    protected function withSurveyRouteParams(array $survey, Instrument $instrument): array
+    {
+        if (($survey['store_route_name'] ?? null) === 'participant.assessments.store') {
+            $survey['route_params'] = ['instrument' => $instrument];
+        }
+
+        if (($survey['route_name'] ?? null) === 'participant.assessments.show') {
+            $survey['route_params'] = ['instrument' => $instrument];
         }
 
         return $survey;

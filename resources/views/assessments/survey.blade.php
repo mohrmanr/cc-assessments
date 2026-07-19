@@ -27,7 +27,7 @@
                     @endif
                 </p>
 
-                <form method="POST" action="{{ route($survey['store_route_name']) }}">
+                <form method="POST" action="{{ route($survey['store_route_name'], $survey['route_params'] ?? []) }}">
                     @csrf
 
                     <div style="margin-bottom: 1.5rem; padding: 1rem; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 0.5rem;">
