@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\AssessmentCompletedNotification;
 use App\Services\InstrumentScorer;
 use App\Services\TreatmentRecommendationService;
+use App\Support\AttachmentSurvey;
 use App\Support\SurveyScaleConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -149,6 +150,7 @@ class AssessmentController extends Controller
                 'fields' => $fieldResponses,
                 'items' => $itemResponses,
             ],
+            'subscale_scores' => $score['subscale_scores'] ?? null,
             'treatment_track_id' => $participant->treatment_track_id,
             'primary_clinician_id' => $participant->primary_clinician_id,
             'threshold_met' => $score['threshold_met'],
@@ -230,6 +232,8 @@ class AssessmentController extends Controller
         $items = ! empty($instrument->items)
             ? $instrument->items
             : ($survey['items'] ?? (is_string($itemsKey) ? config("portal.{$itemsKey}", []) : []));
+
+        $items = AttachmentSurvey::ensureTargetItems($items, $instrument->scoring_config ?? []);
 
         $scoringConfig = $instrument->scoring_config ?? [];
         $labels = $scoringConfig['response_labels'] ?? null;

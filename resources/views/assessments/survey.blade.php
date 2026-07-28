@@ -3,6 +3,15 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $survey['title'] }}</h2>
     </x-slot>
 
+    @php
+        $fieldOffset = count($survey['fields'] ?? []);
+        $itemsHaveTargets = collect($items)->contains(fn ($item) => filled($item['target'] ?? null));
+        $itemGroups = $itemsHaveTargets
+            ? \App\Support\AttachmentSurvey::groupByTarget($items)
+            : ['general' => $items];
+        $questionNumber = $fieldOffset;
+    @endphp
+
     <div class="py-12" style="padding-bottom: 5rem;">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white shadow-sm rounded-lg p-6 space-y-6">
@@ -63,28 +72,42 @@
                         </div>
                     @endforeach
 
-                    @foreach ($items as $index => $item)
-                        <fieldset style="border: none; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem; margin-bottom: 1.5rem;">
-                            <legend style="font-size: 0.875rem; font-weight: 500; color: #111827; margin-bottom: 0.5rem;">
-                                {{ $index + 1 + count($survey['fields'] ?? []) }}. {{ $item['text'] }}
-                            </legend>
-                            @if (($survey['scale_type'] ?? 'discrete') === 'continuous')
-                                <x-survey-continuous-scale
-                                    :name="$item['id']"
-                                    :min="$survey['min'] ?? 0"
-                                    :max="$survey['max'] ?? 100"
-                                    :step="$survey['step'] ?? 1"
-                                    :default="$survey['default'] ?? null"
-                                    :labels="$survey['scale_labels'] ?? []"
-                                />
-                            @else
-                                <x-survey-answer-scale
-                                    :name="$item['id']"
-                                    :labels="$labels"
-                                    :default="$survey['default'] ?? null"
-                                />
-                            @endif
-                        </fieldset>
+                    @foreach ($itemGroups as $targetKey => $groupItems)
+                        @if ($itemsHaveTargets)
+                            <div style="margin: 2rem 0 1rem; padding: 0.875rem 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+                                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #0f172a;">
+                                    {{ \App\Support\AttachmentSurvey::targetLabel($targetKey) }}
+                                </h3>
+                                <p style="margin: 0.35rem 0 0; font-size: 0.8125rem; color: #475569;">
+                                    Answer the following statements while thinking about your {{ strtolower(\App\Support\AttachmentSurvey::targetLabel($targetKey)) }}.
+                                </p>
+                            </div>
+                        @endif
+
+                        @foreach ($groupItems as $item)
+                            @php $questionNumber++; @endphp
+                            <fieldset style="border: none; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                                <legend style="font-size: 0.875rem; font-weight: 500; color: #111827; margin-bottom: 0.5rem;">
+                                    {{ $questionNumber }}. {{ $item['text'] }}
+                                </legend>
+                                @if (($survey['scale_type'] ?? 'discrete') === 'continuous')
+                                    <x-survey-continuous-scale
+                                        :name="$item['id']"
+                                        :min="$survey['min'] ?? 0"
+                                        :max="$survey['max'] ?? 100"
+                                        :step="$survey['step'] ?? 1"
+                                        :default="$survey['default'] ?? null"
+                                        :labels="$survey['scale_labels'] ?? []"
+                                    />
+                                @else
+                                    <x-survey-answer-scale
+                                        :name="$item['id']"
+                                        :labels="$labels"
+                                        :default="$survey['default'] ?? null"
+                                    />
+                                @endif
+                            </fieldset>
+                        @endforeach
                     @endforeach
 
                     <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb;">

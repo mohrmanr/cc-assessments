@@ -128,12 +128,21 @@ class EvaluationPortalSeeder extends Seeder
                 'name' => 'Experiences in Close Relationships-Revised Short Form',
                 'version' => 'ECR-RS',
                 'domain' => 'attachment',
-                'items' => $this->demoItems('ecr_rs', 9, 'I feel secure and connected in close relationships.'),
+                'items' => \App\Support\AttachmentSurvey::expandForTargets(
+                    \App\Support\AttachmentSurvey::ecrRsBaseItems()
+                ),
                 'scoring_config' => [
-                    'threshold' => 36,
-                    'method' => 'sum',
-                    'description' => 'Complete the Experiences in Close Relationships-Revised Short Form for attachment patterns with key relationships.',
-                    'instructions' => 'Select one answer per statement based on how you generally feel in close relationships.',
+                    'threshold' => 4.0,
+                    'method' => 'attachment_targets',
+                    'direction' => 'above',
+                    'description' => 'Rate how you experience close relationships with your mother, father, partner, and best friend.',
+                    'instructions' => 'You will answer the same set of questions four times — once for each person. For each statement, select how much you agree or disagree.',
+                    'repeat_for_targets' => ['mother', 'father', 'partner', 'best_friend'],
+                    'item_attributes' => [
+                        ['key' => 'reverse_score', 'type' => 'boolean', 'label' => 'Reverse score', 'standard' => true],
+                        ['key' => 'target', 'type' => 'string', 'label' => 'Target'],
+                        ['key' => 'subscale', 'type' => 'string', 'label' => 'Subscale'],
+                    ],
                     'response_labels' => [
                         1 => 'Strongly disagree',
                         2 => 'Disagree',
