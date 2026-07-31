@@ -33,16 +33,31 @@ class InstrumentController extends Controller
 
         $scaleConfig = SurveyScaleConfig::resolve($scoringConfig, is_array($surveyConfig) ? $surveyConfig : null);
 
+        $intro = $scoringConfig['intro'] ?? ($surveyConfig['intro'] ?? []);
+        if (! is_array($intro)) {
+            $intro = [];
+        }
+
         return view('dashboards.instrument-edit', [
             'instrument' => $instrument,
             'items' => $items,
             'itemAttributes' => $itemAttributes,
             'responseLabels' => $responseLabels,
             'scaleConfig' => $scaleConfig,
+            'surveyTitle' => $scoringConfig['survey_title']
+                ?? ($surveyConfig['title'] ?? "{$instrument->name} Baseline Assessment"),
             'instructions' => $scoringConfig['instructions']
-                ?? ($surveyConfig['instructions'] ?? 'Select one answer per question.'),
+                ?? ($surveyConfig['instructions'] ?? 'Select one answer per question, then submit.'),
             'description' => $scoringConfig['description']
                 ?? ($surveyConfig['description'] ?? ''),
+            'introText' => collect($intro)->implode("\n\n"),
+            'closing' => $scoringConfig['closing']
+                ?? ($surveyConfig['closing'] ?? ''),
+            'submitLabel' => $scoringConfig['submit_label'] ?? 'Submit',
+            'submitHint' => $scoringConfig['submit_hint']
+                ?? 'You can submit from here or use the same button after the last question.',
+            'completionMessage' => $scoringConfig['completion_message']
+                ?? 'Thank you for completing this survey. Your responses have been recorded for your care team.',
         ]);
     }
 
@@ -52,8 +67,14 @@ class InstrumentController extends Controller
         $itemAttributes = $this->resolveItemAttributes($scoringConfig);
 
         $rules = [
-            'instructions' => ['required', 'string', 'max:2000'],
-            'description' => ['nullable', 'string', 'max:2000'],
+            'survey_title' => ['nullable', 'string', 'max:255'],
+            'instructions' => ['required', 'string', 'max:5000'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'intro' => ['nullable', 'string', 'max:10000'],
+            'closing' => ['nullable', 'string', 'max:5000'],
+            'submit_label' => ['nullable', 'string', 'max:100'],
+            'submit_hint' => ['nullable', 'string', 'max:500'],
+            'completion_message' => ['nullable', 'string', 'max:2000'],
             'is_active' => ['sometimes', 'boolean'],
             'answer_type' => ['required', 'in:custom,buckets,slider'],
             'items' => ['required', 'array', 'min:1'],
@@ -160,8 +181,14 @@ class InstrumentController extends Controller
             }
         }
 
+        $scoringConfig['survey_title'] = trim($validated['survey_title'] ?? '');
         $scoringConfig['instructions'] = trim($validated['instructions']);
         $scoringConfig['description'] = trim($validated['description'] ?? '');
+        $scoringConfig['intro'] = $this->parseParagraphBlocks($validated['intro'] ?? '');
+        $scoringConfig['closing'] = trim($validated['closing'] ?? '');
+        $scoringConfig['submit_label'] = trim($validated['submit_label'] ?? '') ?: 'Submit';
+        $scoringConfig['submit_hint'] = trim($validated['submit_hint'] ?? '');
+        $scoringConfig['completion_message'] = trim($validated['completion_message'] ?? '');
         $scoringConfig['item_attributes'] = $itemAttributes;
 
         $instrument->update([
@@ -259,6 +286,25 @@ class InstrumentController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    /**
+     * Split blank-line-separated text into intro paragraphs.
+     *
+     * @return array<int, string>
+     */
+    private function parseParagraphBlocks(?string $text): array
+    {
+        $text = trim((string) $text);
+        if ($text === '') {
+            return [];
+        }
+
+        return collect(preg_split("/\R\s*\R/u", $text) ?: [])
+            ->map(fn (string $paragraph): string => trim($paragraph))
+            ->filter(fn (string $paragraph): bool => $paragraph !== '')
+            ->values()
+            ->all();
     }
 
     /**

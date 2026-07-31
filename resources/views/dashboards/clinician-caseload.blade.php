@@ -59,6 +59,8 @@
                                     Completed {{ $result->administered_at->format('M j, Y g:i A') }}
                                 </p>
 
+                                <x-attachment-score-summary :result="$result" />
+
                                 @if (! empty($fieldResponses))
                                     <div class="mt-3">
                                         <p class="font-semibold text-gray-700">Reference information</p>

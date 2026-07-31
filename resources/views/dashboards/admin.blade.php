@@ -130,6 +130,7 @@
                                     <td colspan="6" class="pb-4 pr-4 text-xs text-gray-600">
                                         <details>
                                             <summary class="cursor-pointer font-semibold text-gray-700">View submitted responses</summary>
+                                            <x-attachment-score-summary :result="$result" class="mb-3" />
                                             @if (! empty($fieldResponses))
                                                 <div class="mt-2">
                                                     <p class="font-semibold">Reference information</p>

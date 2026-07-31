@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'name',
     'min' => 0,
     'max' => 100,

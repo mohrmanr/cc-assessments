@@ -40,10 +40,7 @@
 
                             @if ($survey['completed'])
                                 <p class="mt-3 text-sm text-gray-700">
-                                    Score: <strong>{{ $survey['result']->total_score }}</strong>
-                                    @if ($survey['score_max'])
-                                        / {{ $survey['score_max'] }}
-                                    @endif
+                                    Thank you for completing this survey. Your responses have been shared with your care team.
                                 </p>
                                 <p class="mt-1 text-xs text-gray-500">
                                     Completed {{ $survey['result']->administered_at->format('M j, Y g:i A') }}
@@ -58,13 +55,9 @@
                 </div>
 
                 @if ($baselineDone)
-                    @if ($latestResult)
-                        <div class="rounded-md bg-gray-50 p-4 text-sm">
-                            <p><strong>Latest score:</strong> {{ $latestResult->total_score }} ({{ $latestResult->instrument->name }})</p>
-                            <p class="mt-1"><strong>Threshold met:</strong> {{ $latestResult->threshold_met ? 'Yes — clinician notified' : 'No' }}</p>
-                            <p class="mt-1 text-gray-500">Administered {{ $latestResult->administered_at->format('M j, Y g:i A') }}</p>
-                        </div>
-                    @endif
+                    <div class="rounded-md bg-green-50 border border-green-100 p-4 text-sm text-green-900">
+                        Thank you for completing your baseline surveys. Your care team will review your responses.
+                    </div>
                 @endif
             </div>
         </div>

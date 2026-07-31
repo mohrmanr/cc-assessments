@@ -44,17 +44,43 @@
             <div class="bg-white shadow-sm rounded-lg p-4 space-y-4">
                 <div>
                     <h3 class="text-sm font-semibold text-gray-900">Participant-facing text</h3>
-                    <p class="mt-1 text-xs text-gray-500">Description appears on the participant dashboard card. Instructions appear at the top of the survey.</p>
+                    <p class="mt-1 text-xs text-gray-500">Edit every message participants see for this assessment. Leave optional fields blank to hide them.</p>
+                </div>
+                <div>
+                    <label for="survey_title" class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Survey page title</label>
+                    <input id="survey_title" name="survey_title" type="text" maxlength="255" value="{{ old('survey_title', $surveyTitle) }}" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Shown at the top of the survey page">
                 </div>
                 <div class="grid gap-4 lg:grid-cols-2">
                     <div>
                         <label for="description" class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Description</label>
-                        <textarea id="description" name="description" rows="4" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Short summary shown before the participant starts this assessment.">{{ old('description', $description) }}</textarea>
+                        <textarea id="description" name="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Short summary on the participant dashboard and at the top of the survey.">{{ old('description', $description) }}</textarea>
                     </div>
                     <div>
                         <label for="instructions" class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Instructions</label>
-                        <textarea id="instructions" name="instructions" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Directions shown at the top of the survey form.">{{ old('instructions', $instructions) }}</textarea>
+                        <textarea id="instructions" name="instructions" rows="3" required class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Directions shown before the questions.">{{ old('instructions', $instructions) }}</textarea>
                     </div>
+                </div>
+                <div>
+                    <label for="intro" class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Intro paragraphs</label>
+                    <textarea id="intro" name="intro" rows="5" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Optional longer introduction. Separate paragraphs with a blank line.">{{ old('intro', $introText) }}</textarea>
+                </div>
+                <div>
+                    <label for="closing" class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Closing message</label>
+                    <textarea id="closing" name="closing" rows="2" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Optional text shown after the questions.">{{ old('closing', $closing) }}</textarea>
+                </div>
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <div>
+                        <label for="submit_label" class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Submit button label</label>
+                        <input id="submit_label" name="submit_label" type="text" maxlength="100" value="{{ old('submit_label', $submitLabel) }}" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label for="submit_hint" class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Submit tip text</label>
+                        <input id="submit_hint" name="submit_hint" type="text" maxlength="500" value="{{ old('submit_hint', $submitHint) }}" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Small note under the top Submit button. Leave blank to hide.">
+                    </div>
+                </div>
+                <div>
+                    <label for="completion_message" class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Thank-you message after submit</label>
+                    <textarea id="completion_message" name="completion_message" rows="2" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Shown to the participant after they finish. Scores are never shown to participants.">{{ old('completion_message', $completionMessage) }}</textarea>
                 </div>
                 <div class="flex items-center border-t border-gray-100 pt-3">
                     <label class="inline-flex items-center gap-2 text-sm text-gray-700">

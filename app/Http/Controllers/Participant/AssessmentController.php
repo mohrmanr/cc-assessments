@@ -161,13 +161,10 @@ class AssessmentController extends Controller
         $recommendation = $recommendations->maybeCreateFromResult($result);
         $this->notifyAdmins($result);
 
-        $message = $score['threshold_met']
-            ? "Baseline {$survey['label']} complete. Your score suggests additional clinician review may be appropriate."
-            : "Baseline {$survey['label']} complete. Your responses have been recorded.";
-
-        if ($recommendation) {
-            $message .= ' A treatment recommendation has been sent to your care team.';
-        }
+        $completionMessage = $instrument->scoring_config['completion_message'] ?? null;
+        $message = filled($completionMessage)
+            ? trim((string) $completionMessage)
+            : "Thank you for completing the {$survey['label']} survey. Your responses have been recorded for your care team.";
 
         return redirect()
             ->route('participant.dashboard')
@@ -199,16 +196,22 @@ class AssessmentController extends Controller
             'route_name' => 'participant.assessments.show',
             'store_route_name' => 'participant.assessments.store',
             'route_params' => ['instrument' => $instrument],
-            'title' => "{$instrument->name} Baseline Assessment",
+            'title' => filled($scoringConfig['survey_title'] ?? null)
+                ? $scoringConfig['survey_title']
+                : "{$instrument->name} Baseline Assessment",
             'label' => $instrument->version ?: $instrument->name,
             'description' => filled($scoringConfig['description'] ?? null)
                 ? $scoringConfig['description']
                 : "Complete the {$instrument->name} assessment.",
             'instructions' => filled($scoringConfig['instructions'] ?? null)
                 ? $scoringConfig['instructions']
-                : 'Select one answer per question.',
+                : 'Select one answer per question, then submit.',
             'intro' => $scoringConfig['intro'] ?? [],
             'closing' => $scoringConfig['closing'] ?? null,
+            'submit_label' => $scoringConfig['submit_label'] ?? 'Submit',
+            'submit_hint' => array_key_exists('submit_hint', $scoringConfig)
+                ? $scoringConfig['submit_hint']
+                : 'You can submit from here or use the same button after the last question.',
             'fields' => $scoringConfig['fields'] ?? [],
             'items' => $instrument->items ?? [],
             'response_labels' => $labels,
@@ -278,6 +281,26 @@ class AssessmentController extends Controller
 
         if (filled($config['description'] ?? null)) {
             $survey['description'] = $config['description'];
+        }
+
+        if (filled($config['survey_title'] ?? null)) {
+            $survey['title'] = $config['survey_title'];
+        }
+
+        if (array_key_exists('intro', $config) && is_array($config['intro'])) {
+            $survey['intro'] = $config['intro'];
+        }
+
+        if (array_key_exists('closing', $config)) {
+            $survey['closing'] = $config['closing'] ?: null;
+        }
+
+        if (filled($config['submit_label'] ?? null)) {
+            $survey['submit_label'] = $config['submit_label'];
+        }
+
+        if (array_key_exists('submit_hint', $config)) {
+            $survey['submit_hint'] = $config['submit_hint'];
         }
 
         foreach (['scale_type', 'scale_mode', 'min', 'max', 'step', 'scale_labels', 'bucket_min', 'bucket_max', 'bucket_count', 'bucket_label_suffix'] as $key) {
