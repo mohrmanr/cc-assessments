@@ -167,6 +167,30 @@ class AssessmentUploadController extends Controller
         return view('dashboards.participant-results', compact('participant', 'results', 'attachmentQuadrantCharts'));
     }
 
+    public function resetResult(Request $request, AssessmentResult $result): RedirectResponse
+    {
+        $result->load(['participant.user', 'instrument']);
+
+        $participantName = $result->participant?->user?->name ?? 'participant';
+        $instrumentLabel = $result->instrument?->version
+            ?: ($result->instrument?->name ?? 'assessment');
+        $participantId = $result->participant_id;
+
+        $result->delete();
+
+        $message = "Reset {$instrumentLabel} for {$participantName}. Ask them to log in and retake it from their dashboard.";
+
+        if ($request->boolean('return_to_results') && $participantId) {
+            return redirect()
+                ->route('admin.participants.results', $participantId)
+                ->with('status', $message);
+        }
+
+        return redirect()
+            ->route('admin.dashboard')
+            ->with('status', $message);
+    }
+
     /**
      * @param  array<string, mixed>  $definition
      * @return array<int, string>

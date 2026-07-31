@@ -110,6 +110,17 @@
                                         <a href="{{ route('admin.participants.results', $result->participant) }}" class="mt-1 inline-block text-xs font-semibold text-indigo-600 hover:text-indigo-500">
                                             View score chart
                                         </a>
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.assessment-results.reset', $result) }}"
+                                            class="mt-2"
+                                            onsubmit="return confirm('Reset this {{ $result->instrument->version ?: $result->instrument->name }} for {{ $result->participant->user->name }}? Their current answers will be deleted and they can retake the survey.')"
+                                        >
+                                            @csrf
+                                            <button type="submit" class="text-xs font-semibold text-red-600 hover:text-red-500">
+                                                Reset &amp; allow retake
+                                            </button>
+                                        </form>
                                     </td>
                                     <td class="py-2 pr-4">
                                         <div class="text-gray-900">{{ $result->instrument->name }}</div>

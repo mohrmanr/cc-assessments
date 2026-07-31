@@ -17,6 +17,11 @@
                         Back to admin
                     </a>
                 </div>
+                @if (session('status'))
+                    <div class="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+                        {{ session('status') }}
+                    </div>
+                @endif
             </div>
 
             @if (! empty($attachmentQuadrantCharts))
@@ -123,6 +128,7 @@
                                     <th class="py-2 pr-4">Total Score</th>
                                     <th class="py-2 pr-4">Dimensions</th>
                                     <th class="py-2 pr-4">Threshold</th>
+                                    <th class="py-2 pr-4">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -142,6 +148,19 @@
                                             @endforelse
                                         </td>
                                         <td class="py-2 pr-4 text-gray-600">{{ $result->threshold_met ? 'Met' : 'Not met' }}</td>
+                                        <td class="py-2 pr-4">
+                                            <form
+                                                method="POST"
+                                                action="{{ route('admin.assessment-results.reset', $result) }}"
+                                                onsubmit="return confirm('Reset this {{ $result->instrument->version ?: $result->instrument->name }} result? Current answers will be deleted so {{ $participant->user->name }} can retake it.')"
+                                            >
+                                                @csrf
+                                                <input type="hidden" name="return_to_results" value="1">
+                                                <button type="submit" class="text-xs font-semibold text-red-600 hover:text-red-500">
+                                                    Reset &amp; allow retake
+                                                </button>
+                                            </form>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>

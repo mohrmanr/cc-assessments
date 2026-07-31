@@ -51,6 +51,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
         ->name('admin.assessments.completed.download');
     Route::get('/admin/participants/{participant}/results', [AssessmentUploadController::class, 'participantResults'])
         ->name('admin.participants.results');
+    Route::post('/admin/assessment-results/{result}/reset', [AssessmentUploadController::class, 'resetResult'])
+        ->name('admin.assessment-results.reset');
     Route::get('/admin/instruments/{instrument}/edit', [InstrumentController::class, 'edit'])
         ->name('admin.instruments.edit');
     Route::put('/admin/instruments/{instrument}', [InstrumentController::class, 'update'])
