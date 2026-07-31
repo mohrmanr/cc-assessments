@@ -154,6 +154,44 @@ class AttachmentQuadrantPresenter
         return $flat;
     }
 
+    /**
+     * Compact score label for tables: anxiety / avoidance when present, else total.
+     *
+     * @return array{primary: string, secondary: string|null, is_attachment: bool}
+     */
+    public static function compactScore(AssessmentResult $result): array
+    {
+        $dimensions = $result->subscale_scores['dimensions'] ?? [];
+        $anxiety = $dimensions['attachment_anxiety'] ?? null;
+        $avoidance = $dimensions['attachment_avoidance'] ?? null;
+
+        if ($anxiety === null || $avoidance === null) {
+            $targets = self::targetDimensions(is_array($dimensions) ? $dimensions : []);
+            if ($targets !== []) {
+                $anxVals = collect($targets)->pluck('anxiety')->filter(fn ($v) => $v !== null);
+                $avdVals = collect($targets)->pluck('avoidance')->filter(fn ($v) => $v !== null);
+                if ($anxVals->isNotEmpty() && $avdVals->isNotEmpty()) {
+                    $anxiety = round((float) $anxVals->avg(), 2);
+                    $avoidance = round((float) $avdVals->avg(), 2);
+                }
+            }
+        }
+
+        if ($anxiety !== null && $avoidance !== null) {
+            return [
+                'primary' => number_format((float) $anxiety, 2).' / '.number_format((float) $avoidance, 2),
+                'secondary' => 'Anxiety / Avoidance',
+                'is_attachment' => true,
+            ];
+        }
+
+        return [
+            'primary' => (string) ($result->total_score ?? '—'),
+            'secondary' => null,
+            'is_attachment' => false,
+        ];
+    }
+
     public static function quadrantLabel(float $anxiety, float $avoidance): string
     {
         return match (true) {

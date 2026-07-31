@@ -120,7 +120,15 @@
                                         <div class="text-gray-900">{{ $result->instrument->name }}</div>
                                         <div class="text-xs text-gray-500">{{ $result->instrument->version }}</div>
                                     </td>
-                                    <td class="py-2 pr-4 text-gray-900">{{ $result->total_score }}</td>
+                                    <td class="py-2 pr-4 text-gray-900">
+                                        @php
+                                            $scoreDisplay = \App\Support\AttachmentQuadrantPresenter::compactScore($result);
+                                        @endphp
+                                        <div>{{ $scoreDisplay['primary'] }}</div>
+                                        @if ($scoreDisplay['secondary'])
+                                            <div class="text-xs text-gray-500">{{ $scoreDisplay['secondary'] }}</div>
+                                        @endif
+                                    </td>
                                     <td class="py-2 pr-4">
                                         @if ($result->threshold_met)
                                             <span class="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">Met</span>

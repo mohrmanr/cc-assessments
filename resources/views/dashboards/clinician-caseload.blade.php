@@ -17,7 +17,14 @@
                     <div class="mt-4 border rounded-lg p-4">
                         <p class="font-medium">{{ $rec->participant->user->name }}</p>
                         <p class="text-sm text-gray-600">
-                            {{ $rec->assessmentResult->instrument->name }} score: {{ $rec->assessmentResult->total_score }}
+                            @php
+                                $recScore = \App\Support\AttachmentQuadrantPresenter::compactScore($rec->assessmentResult);
+                            @endphp
+                            {{ $rec->assessmentResult->instrument->name }} score:
+                            {{ $recScore['primary'] }}
+                            @if ($recScore['secondary'])
+                                <span class="text-gray-500">({{ $recScore['secondary'] }})</span>
+                            @endif
                             (threshold met)
                         </p>
                         <p class="text-sm text-gray-500">Recommended track: {{ $rec->recommendedTrack?->name ?? 'TBD' }}</p>
@@ -49,8 +56,14 @@
                             @endphp
                             <div class="mt-3 rounded-md bg-gray-50 p-3 text-sm">
                                 <p>
+                                    @php
+                                        $resultScore = \App\Support\AttachmentQuadrantPresenter::compactScore($result);
+                                    @endphp
                                     {{ $result->instrument->name }} ({{ $result->administration_type->value }}):
-                                    <strong>{{ $result->total_score }}</strong>
+                                    <strong>{{ $resultScore['primary'] }}</strong>
+                                    @if ($resultScore['secondary'])
+                                        <span class="text-gray-500 text-xs">({{ $resultScore['secondary'] }})</span>
+                                    @endif
                                     @if ($result->threshold_met)
                                         <span class="text-amber-700">— above threshold</span>
                                     @endif

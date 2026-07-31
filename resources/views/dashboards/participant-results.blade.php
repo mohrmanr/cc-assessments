@@ -125,7 +125,7 @@
                                 <tr class="text-left text-gray-500">
                                     <th class="py-2 pr-4">Date</th>
                                     <th class="py-2 pr-4">Window</th>
-                                    <th class="py-2 pr-4">Total Score</th>
+                                    <th class="py-2 pr-4">Score</th>
                                     <th class="py-2 pr-4">Dimensions</th>
                                     <th class="py-2 pr-4">Threshold</th>
                                     <th class="py-2 pr-4">Actions</th>
@@ -136,7 +136,15 @@
                                     <tr>
                                         <td class="py-2 pr-4 text-gray-900">{{ $result->administered_at->format('M j, Y') }}</td>
                                         <td class="py-2 pr-4 text-gray-600">{{ ['Baseline', '4 months', '8 months', '12 months'][$index] ?? 'Follow-up' }}</td>
-                                        <td class="py-2 pr-4 text-gray-900">{{ $result->total_score }}</td>
+                                        <td class="py-2 pr-4 text-gray-900">
+                                            @php
+                                                $scoreDisplay = \App\Support\AttachmentQuadrantPresenter::compactScore($result);
+                                            @endphp
+                                            <div>{{ $scoreDisplay['primary'] }}</div>
+                                            @if ($scoreDisplay['secondary'])
+                                                <div class="text-xs text-gray-500">{{ $scoreDisplay['secondary'] }}</div>
+                                            @endif
+                                        </td>
                                         <td class="py-2 pr-4 text-gray-600">
                                             @php
                                                 $flatDimensions = \App\Support\AttachmentQuadrantPresenter::flattenDimensions($result->subscale_scores['dimensions'] ?? []);
