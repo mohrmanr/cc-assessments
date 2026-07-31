@@ -7,6 +7,10 @@
         $defaultTab = 'assessments';
         if ($errors->any()) {
             $defaultTab = 'upload';
+        } elseif (session('admin_tab')) {
+            $defaultTab = (string) session('admin_tab');
+        } elseif (session('status') && str_contains(strtolower((string) session('status')), 'reset ')) {
+            $defaultTab = 'completed';
         } elseif (session('status') && str_contains(strtolower((string) session('status')), 'uploaded')) {
             $defaultTab = 'assessments';
         }
@@ -75,7 +79,7 @@
                     <div>
                         <h3 class="font-semibold text-lg text-gray-900">Completed Assessment Data</h3>
                         <p class="mt-1 text-sm text-gray-600">
-                            Review submitted assessment results and download a CSV export for analysis or reporting.
+                            Review submitted results, download CSV, or reset a result so the participant can retake that survey.
                         </p>
                     </div>
                     <a href="{{ route('admin.assessments.completed.download') }}" class="inline-flex justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
@@ -93,6 +97,7 @@
                                 <th class="py-2 pr-4">Threshold</th>
                                 <th class="py-2 pr-4">Clinician</th>
                                 <th class="py-2 pr-4">Completed</th>
+                                <th class="py-2 pr-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -110,17 +115,6 @@
                                         <a href="{{ route('admin.participants.results', $result->participant) }}" class="mt-1 inline-block text-xs font-semibold text-indigo-600 hover:text-indigo-500">
                                             View score chart
                                         </a>
-                                        <form
-                                            method="POST"
-                                            action="{{ route('admin.assessment-results.reset', $result) }}"
-                                            class="mt-2"
-                                            onsubmit="return confirm('Reset this {{ $result->instrument->version ?: $result->instrument->name }} for {{ $result->participant->user->name }}? Their current answers will be deleted and they can retake the survey.')"
-                                        >
-                                            @csrf
-                                            <button type="submit" class="text-xs font-semibold text-red-600 hover:text-red-500">
-                                                Reset &amp; allow retake
-                                            </button>
-                                        </form>
                                     </td>
                                     <td class="py-2 pr-4">
                                         <div class="text-gray-900">{{ $result->instrument->name }}</div>
@@ -136,9 +130,21 @@
                                     </td>
                                     <td class="py-2 pr-4 text-gray-600">{{ $result->primaryClinician?->name ?? 'Unassigned' }}</td>
                                     <td class="py-2 pr-4 text-gray-600">{{ $result->administered_at->format('M j, Y g:i A') }}</td>
+                                    <td class="py-2 pr-4">
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.assessment-results.reset', $result) }}"
+                                            onsubmit="return confirm('Reset {{ $result->instrument->version ?: $result->instrument->name }} for {{ $result->participant->user->name }}?\n\nTheir answers and scores will be deleted. Their dashboard will show Pending so they can retake the survey.')"
+                                        >
+                                            @csrf
+                                            <button type="submit" class="inline-flex rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500">
+                                                Reset for retake
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td colspan="6" class="pb-4 pr-4 text-xs text-gray-600">
+                                    <td colspan="7" class="pb-4 pr-4 text-xs text-gray-600">
                                         <details>
                                             <summary class="cursor-pointer font-semibold text-gray-700">View submitted responses</summary>
                                             <x-attachment-score-summary :result="$result" class="mb-3" />
@@ -173,7 +179,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-3 text-gray-500">No completed assessments yet.</td>
+                                    <td colspan="7" class="py-3 text-gray-500">No completed assessments yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

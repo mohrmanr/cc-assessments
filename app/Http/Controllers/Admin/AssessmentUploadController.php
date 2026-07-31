@@ -175,10 +175,23 @@ class AssessmentUploadController extends Controller
         $instrumentLabel = $result->instrument?->version
             ?: ($result->instrument?->name ?? 'assessment');
         $participantId = $result->participant_id;
+        $instrumentId = $result->instrument_id;
 
-        $result->delete();
+        // Clear every baseline for this participant + instrument so the dashboard
+        // flips back to Pending / Start (not leftover duplicate rows).
+        $deleted = AssessmentResult::query()
+            ->where('participant_id', $participantId)
+            ->where('instrument_id', $instrumentId)
+            ->where(
+                'administration_type',
+                $result->administration_type instanceof \BackedEnum
+                    ? $result->administration_type->value
+                    : $result->administration_type
+            )
+            ->delete();
 
-        $message = "Reset {$instrumentLabel} for {$participantName}. Ask them to log in and retake it from their dashboard.";
+        $message = "Reset {$instrumentLabel} for {$participantName} ({$deleted} result".($deleted === 1 ? '' : 's').' removed). '
+            .'Ask them to refresh their dashboard — the survey should show Pending so they can start again.';
 
         if ($request->boolean('return_to_results') && $participantId) {
             return redirect()
@@ -188,7 +201,8 @@ class AssessmentUploadController extends Controller
 
         return redirect()
             ->route('admin.dashboard')
-            ->with('status', $message);
+            ->with('status', $message)
+            ->with('admin_tab', 'completed');
     }
 
     /**
