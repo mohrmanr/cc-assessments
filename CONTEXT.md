@@ -65,7 +65,7 @@ Participants complete multiple assessments: the full intake battery at account s
 _Avoid_: One-time quiz, pretest/posttest (BPTI terminology)
 
 **Assessment Battery**:
-A grouped set of instruments assigned together, such as the launch intake battery containing PCL-5, DES-II, ACE Questionnaire, GSE-10, and ECR-R.
+A grouped set of instruments assigned together, such as the launch intake battery containing PCL-5, DES-II, ACE Questionnaire, GSE, and ECR-R.
 _Avoid_: Survey packet, test bundle
 
 **Baseline Assessment**:
@@ -113,7 +113,7 @@ A specific validated scale used in an assessment, identified by name and version
 _Avoid_: Survey, quiz, form
 
 **Launch Instruments**:
-PCL-5 (PTSD), DES-II (dissociation), ACE Questionnaire (adverse childhood experiences), GSE-10 (general self-efficacy), ECR-R (attachment). Subject to clinical team confirmation before build.
+PCL-5 (PTSD), DES-II (dissociation), ACE Questionnaire (adverse childhood experiences), GSE (general self-efficacy), ECR-R (attachment). Subject to clinical team confirmation before build.
 _Avoid_: PTSD test, attachment scale (informal)
 
 **Treatment (v1)**:

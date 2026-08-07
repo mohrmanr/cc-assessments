@@ -52,7 +52,7 @@ Public self-registration is disabled. Participants receive email invite links af
 - Laravel 12 + Breeze (Blade) auth
 - Role-based dashboards (`participant`, `clinician`, `admin`, `clinical_supervisor`)
 - MySQL schema: screening, invitations, participants, instruments, assessment results, treatment tracks/recommendations, messaging
-- Seed data: launch instruments (PCL-5, DES-II, ACE, GSE-10, ECR-R), PTSD/general tracks, demo users
+- Seed data: launch instruments (PCL-5, DES-II, ACE, GSE, ECR-R), PTSD/general tracks, demo users
 
 ## Next build steps
 
