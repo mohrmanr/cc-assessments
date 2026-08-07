@@ -12,6 +12,8 @@
     $centerLabel = $labels['center'] ?? '';
     $rightLabel = $labels['right'] ?? "{$max}";
     $initialValue = old($name, $default);
+    $hasInitial = $initialValue !== null && $initialValue !== '';
+    $rangeValue = $hasInitial ? (int) $initialValue : (int) $min;
 @endphp
 
 <div
@@ -20,28 +22,35 @@
     data-min="{{ $min }}"
     data-max="{{ $max }}"
     data-step="{{ $step }}"
-    data-initial="{{ $initialValue === null || $initialValue === '' ? '' : (int) $initialValue }}"
+    data-initial="{{ $hasInitial ? (int) $initialValue : '' }}"
+    style="width: 100%; margin-top: 0.5rem;"
 >
-    <div class="survey-continuous-scale__labels">
-        <span>{{ $leftLabel }}</span>
+    <div
+        class="survey-continuous-scale__labels"
+        style="display: flex; width: 100%; justify-content: space-between; gap: 0.75rem; font-size: 0.75rem; color: #4b5563; margin-bottom: 0.35rem;"
+    >
+        <span style="text-align: left;">{{ $leftLabel }}</span>
         @if ($centerLabel !== '')
-            <span class="survey-continuous-scale__label-center">{{ $centerLabel }}</span>
+            <span style="text-align: center; flex: 1;">{{ $centerLabel }}</span>
         @endif
-        <span class="survey-continuous-scale__label-right">{{ $rightLabel }}</span>
+        <span style="text-align: right;">{{ $rightLabel }}</span>
     </div>
 
-    <div class="survey-continuous-scale__controls">
-        <div class="survey-continuous-scale__range-wrap">
-            <input
-                type="range"
-                class="survey-continuous-scale__range"
-                data-range
-                min="{{ $min }}"
-                max="{{ $max }}"
-                step="{{ $step }}"
-                aria-label="Answer for {{ $name }}"
-            >
-        </div>
+    <div class="survey-continuous-scale__range-wrap" style="width: 100%; margin-bottom: 0.5rem;">
+        <input
+            type="range"
+            class="survey-continuous-scale__range"
+            data-range
+            min="{{ $min }}"
+            max="{{ $max }}"
+            step="{{ $step }}"
+            value="{{ $rangeValue }}"
+            aria-label="Answer for {{ $name }}"
+            style="display: block; width: 100%; height: 1.25rem; margin: 0; cursor: pointer; accent-color: #4f46e5;"
+        >
+    </div>
+
+    <div class="survey-continuous-scale__controls" style="display: flex; align-items: center; gap: 0.75rem;">
         <input
             type="number"
             id="{{ $name }}"
@@ -53,14 +62,22 @@
             step="{{ $step }}"
             inputmode="numeric"
             required
-            @if ($initialValue !== null && $initialValue !== '')
+            @if ($hasInitial)
                 value="{{ (int) $initialValue }}"
             @endif
+            style="width: 4.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.5rem; text-align: center; font-size: 0.875rem;"
         >
-        <button type="button" class="survey-continuous-scale__clear" data-clear>Clear</button>
+        <button
+            type="button"
+            class="survey-continuous-scale__clear"
+            data-clear
+            style="border: 0; background: transparent; color: #4f46e5; font-size: 0.875rem; font-weight: 600; cursor: pointer; padding: 0;"
+        >
+            Clear
+        </button>
     </div>
 
     @error($name)
-        <p class="survey-continuous-scale__error">{{ $message }}</p>
+        <p class="survey-continuous-scale__error" style="margin-top: 0.25rem; font-size: 0.75rem; color: #dc2626;">{{ $message }}</p>
     @enderror
 </div>

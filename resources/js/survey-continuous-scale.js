@@ -1,5 +1,5 @@
-function initSurveyContinuousScales() {
-    document.querySelectorAll('[data-survey-continuous-scale]').forEach((root) => {
+function initSurveyContinuousScales(scope = document) {
+    scope.querySelectorAll('[data-survey-continuous-scale]').forEach((root) => {
         if (root.dataset.initialized === 'true') {
             return;
         }
@@ -16,8 +16,16 @@ function initSurveyContinuousScales() {
 
         const min = Number(root.dataset.min ?? range.min ?? 0);
         const max = Number(root.dataset.max ?? range.max ?? 100);
+        const step = Number(root.dataset.step ?? range.step ?? 1);
 
-        const clamp = (value) => Math.min(max, Math.max(min, value));
+        const clamp = (value) => {
+            const snapped = Math.round(value / step) * step;
+            return Math.min(max, Math.max(min, snapped));
+        };
+
+        const syncNumberFromRange = () => {
+            number.value = range.value;
+        };
 
         const syncRangeFromNumber = () => {
             if (number.value === '') {
@@ -25,20 +33,18 @@ function initSurveyContinuousScales() {
                 return;
             }
 
-            const parsed = clamp(Number(number.value));
+            const parsed = Number(number.value);
             if (Number.isNaN(parsed)) {
-                range.value = String(min);
                 return;
             }
 
-            number.value = String(parsed);
-            range.value = String(parsed);
+            const clamped = clamp(parsed);
+            number.value = String(clamped);
+            range.value = String(clamped);
         };
 
-        range.addEventListener('input', () => {
-            number.value = range.value;
-        });
-
+        range.addEventListener('input', syncNumberFromRange);
+        range.addEventListener('change', syncNumberFromRange);
         number.addEventListener('input', syncRangeFromNumber);
         number.addEventListener('change', syncRangeFromNumber);
 
@@ -50,14 +56,16 @@ function initSurveyContinuousScales() {
 
         const initial = root.dataset.initial ?? '';
         if (initial !== '') {
-            number.value = initial;
-            range.value = initial;
+            const clamped = clamp(Number(initial));
+            number.value = String(clamped);
+            range.value = String(clamped);
         } else {
             range.value = String(min);
+            // Keep number empty until the participant chooses a value.
         }
     });
 }
 
-document.addEventListener('DOMContentLoaded', initSurveyContinuousScales);
+document.addEventListener('DOMContentLoaded', () => initSurveyContinuousScales());
 
 export { initSurveyContinuousScales };

@@ -126,4 +126,80 @@
             </div>
         </div>
     </div>
+
+    @if (($survey['scale_type'] ?? 'discrete') === 'continuous')
+        <script>
+            (function () {
+                function initSurveyContinuousScales(scope) {
+                    (scope || document).querySelectorAll('[data-survey-continuous-scale]').forEach(function (root) {
+                        if (root.dataset.initialized === 'true') {
+                            return;
+                        }
+                        root.dataset.initialized = 'true';
+
+                        var range = root.querySelector('[data-range]');
+                        var number = root.querySelector('[data-number]');
+                        var clearButton = root.querySelector('[data-clear]');
+                        if (!range || !number || !clearButton) {
+                            return;
+                        }
+
+                        var min = Number(root.dataset.min || range.min || 0);
+                        var max = Number(root.dataset.max || range.max || 100);
+                        var step = Number(root.dataset.step || range.step || 1);
+
+                        function clamp(value) {
+                            var snapped = Math.round(value / step) * step;
+                            return Math.min(max, Math.max(min, snapped));
+                        }
+
+                        function syncNumberFromRange() {
+                            number.value = range.value;
+                        }
+
+                        function syncRangeFromNumber() {
+                            if (number.value === '') {
+                                range.value = String(min);
+                                return;
+                            }
+                            var parsed = Number(number.value);
+                            if (Number.isNaN(parsed)) {
+                                return;
+                            }
+                            var clamped = clamp(parsed);
+                            number.value = String(clamped);
+                            range.value = String(clamped);
+                        }
+
+                        range.addEventListener('input', syncNumberFromRange);
+                        range.addEventListener('change', syncNumberFromRange);
+                        number.addEventListener('input', syncRangeFromNumber);
+                        number.addEventListener('change', syncRangeFromNumber);
+                        clearButton.addEventListener('click', function () {
+                            number.value = '';
+                            range.value = String(min);
+                            number.focus();
+                        });
+
+                        var initial = root.dataset.initial || '';
+                        if (initial !== '') {
+                            var clamped = clamp(Number(initial));
+                            number.value = String(clamped);
+                            range.value = String(clamped);
+                        } else {
+                            range.value = String(min);
+                        }
+                    });
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function () {
+                        initSurveyContinuousScales(document);
+                    });
+                } else {
+                    initSurveyContinuousScales(document);
+                }
+            })();
+        </script>
+    @endif
 </x-app-layout>

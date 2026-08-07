@@ -57,48 +57,49 @@
     }
 
     .survey-continuous-scale {
-        @apply w-full space-y-2;
+        @apply w-full;
     }
 
     .survey-continuous-scale__labels {
-        @apply grid w-full grid-cols-3 gap-2 text-xs text-gray-600;
+        @apply flex w-full items-center justify-between gap-3 text-xs text-gray-600;
     }
 
     .survey-continuous-scale__label-center {
-        @apply text-center;
+        @apply flex-1 text-center;
     }
 
     .survey-continuous-scale__label-right {
         @apply text-right;
     }
 
-    .survey-continuous-scale__controls {
-        @apply flex w-full items-center gap-3;
-    }
-
     .survey-continuous-scale__range-wrap {
-        @apply min-w-0 flex-1;
+        @apply w-full;
     }
 
     .survey-continuous-scale__range {
-        @apply block h-2 w-full cursor-pointer appearance-none rounded-full bg-gray-200;
+        @apply block h-5 w-full cursor-pointer appearance-none rounded-full bg-transparent;
+        accent-color: #4f46e5;
     }
 
     .survey-continuous-scale__range::-webkit-slider-thumb {
-        @apply h-5 w-5 appearance-none rounded-full bg-gray-900;
+        @apply h-5 w-5 appearance-none rounded-full bg-indigo-600;
         margin-top: -6px;
     }
 
     .survey-continuous-scale__range::-moz-range-thumb {
-        @apply h-5 w-5 rounded-full border-0 bg-gray-900;
+        @apply h-5 w-5 rounded-full border-0 bg-indigo-600;
     }
 
     .survey-continuous-scale__range::-webkit-slider-runnable-track {
-        @apply h-2 rounded-full bg-gray-200;
+        @apply h-2 w-full rounded-full bg-gray-200;
     }
 
     .survey-continuous-scale__range::-moz-range-track {
-        @apply h-2 rounded-full bg-gray-200;
+        @apply h-2 w-full rounded-full bg-gray-200;
+    }
+
+    .survey-continuous-scale__controls {
+        @apply flex w-full items-center gap-3;
     }
 
     .survey-continuous-scale__number {
@@ -106,7 +107,7 @@
     }
 
     .survey-continuous-scale__clear {
-        @apply shrink-0 text-sm font-medium text-indigo-600 hover:text-indigo-500;
+        @apply shrink-0 text-sm font-semibold text-indigo-600 hover:text-indigo-500;
     }
 
     .survey-continuous-scale__error {
