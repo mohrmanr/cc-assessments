@@ -16,10 +16,6 @@
     'survey-answer-scale',
     'survey-answer-scale--wide' => $useWideScale,
 ])>
-    @if ($useWideScale)
-        <p class="survey-answer-scale__hint">Swipe sideways to see all answer choices.</p>
-    @endif
-
     <div class="survey-answer-scale__track">
         @foreach ($labels as $value => $label)
             <label class="survey-answer-scale__option">
