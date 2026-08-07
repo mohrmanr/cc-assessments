@@ -86,6 +86,7 @@ class EvaluationPortalSeeder extends Seeder
                 'scoring_config' => [
                     'threshold' => 4,
                     'method' => 'sum',
+                    'fields' => [],
                     'description' => 'Complete the Adverse Childhood Experiences assessment.',
                     'instructions' => 'Below is a list of 10 categories of Adverse Childhood Experiences (ACEs). From the list below, please place a checkmark next to each ACE category that you experienced prior to your 18th birthday. Yes = 1, No = 0.',
                 ],

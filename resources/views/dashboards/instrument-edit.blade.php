@@ -82,6 +82,50 @@
                     <label for="completion_message" class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Thank-you message after submit</label>
                     <textarea id="completion_message" name="completion_message" rows="2" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="Shown to the participant after they finish. Scores are never shown to participants.">{{ old('completion_message', $completionMessage) }}</textarea>
                 </div>
+                <div class="border-t border-gray-100 pt-4 space-y-3" x-data="{ fields: @js(old('reference_fields', $referenceFields)) }">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-900">Optional questions before scored items</h4>
+                            <p class="mt-1 text-xs text-gray-500">Use for things like initials or email only when needed. Leave empty so the survey starts with the scored questions.</p>
+                        </div>
+                        <button
+                            type="button"
+                            class="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            @click="fields.push({ id: '', label: '', type: 'text', max: 100 })"
+                        >
+                            Add field
+                        </button>
+                    </div>
+                    <template x-if="fields.length === 0">
+                        <p class="text-sm text-gray-500">No optional fields. Participants will only see the scored questions.</p>
+                    </template>
+                    <template x-for="(field, index) in fields" :key="index">
+                        <div class="grid gap-3 rounded-md border border-gray-200 p-3 lg:grid-cols-12">
+                            <div class="lg:col-span-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Field id</label>
+                                <input type="text" :name="`reference_fields[${index}][id]`" x-model="field.id" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="participant_initials">
+                            </div>
+                            <div class="lg:col-span-5">
+                                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Question label</label>
+                                <input type="text" :name="`reference_fields[${index}][label]`" x-model="field.label" class="mt-1 block w-full rounded-md border-gray-300 text-sm" placeholder="What are the initials of your first and last name?">
+                            </div>
+                            <div class="lg:col-span-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Type</label>
+                                <select :name="`reference_fields[${index}][type]`" x-model="field.type" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                                    <option value="text">Text</option>
+                                    <option value="email">Email</option>
+                                </select>
+                            </div>
+                            <div class="lg:col-span-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Max length</label>
+                                <input type="number" min="1" max="255" :name="`reference_fields[${index}][max]`" x-model="field.max" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                            </div>
+                            <div class="flex items-end lg:col-span-1">
+                                <button type="button" class="w-full rounded-md border border-red-200 px-2 py-2 text-xs font-semibold text-red-600 hover:bg-red-50" @click="fields.splice(index, 1)">Remove</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
                 <div class="flex items-center border-t border-gray-100 pt-3">
                     <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                         <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $instrument->is_active)) class="rounded border-gray-300 text-indigo-600">

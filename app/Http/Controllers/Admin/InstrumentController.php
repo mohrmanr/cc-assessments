@@ -58,6 +58,7 @@ class InstrumentController extends Controller
                 ?? 'You can submit from here or use the same button after the last question.',
             'completionMessage' => $scoringConfig['completion_message']
                 ?? 'Thank you for completing this survey. Your responses have been recorded for your care team.',
+            'referenceFields' => $this->resolveReferenceFields($instrument, is_array($surveyConfig) ? $surveyConfig : []),
         ]);
     }
 
@@ -77,6 +78,11 @@ class InstrumentController extends Controller
             'completion_message' => ['nullable', 'string', 'max:2000'],
             'is_active' => ['sometimes', 'boolean'],
             'answer_type' => ['required', 'in:custom,buckets,slider'],
+            'reference_fields' => ['nullable', 'array'],
+            'reference_fields.*.id' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9_]*$/'],
+            'reference_fields.*.label' => ['nullable', 'string', 'max:255'],
+            'reference_fields.*.type' => ['nullable', 'in:text,email'],
+            'reference_fields.*.max' => ['nullable', 'integer', 'min:1', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9_]+$/'],
             'items.*.text' => ['required', 'string', 'max:2000'],
@@ -189,6 +195,7 @@ class InstrumentController extends Controller
         $scoringConfig['submit_label'] = trim($validated['submit_label'] ?? '') ?: 'Submit';
         $scoringConfig['submit_hint'] = trim($validated['submit_hint'] ?? '');
         $scoringConfig['completion_message'] = trim($validated['completion_message'] ?? '');
+        $scoringConfig['fields'] = $this->normalizeReferenceFields($validated['reference_fields'] ?? []);
         $scoringConfig['item_attributes'] = $itemAttributes;
 
         $instrument->update([
@@ -305,6 +312,77 @@ class InstrumentController extends Controller
             ->filter(fn (string $paragraph): bool => $paragraph !== '')
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $surveyConfig
+     * @return array<int, array{id: string, label: string, type: string, max: int|null}>
+     */
+    private function resolveReferenceFields(Instrument $instrument, array $surveyConfig): array
+    {
+        $scoringConfig = $instrument->scoring_config ?? [];
+        $fields = array_key_exists('fields', $scoringConfig) && is_array($scoringConfig['fields'])
+            ? $scoringConfig['fields']
+            : ($surveyConfig['fields'] ?? []);
+
+        if (! is_array($fields) || $fields === []) {
+            return [];
+        }
+
+        return collect($fields)
+            ->filter(fn ($field): bool => is_array($field) && filled($field['id'] ?? null) && filled($field['label'] ?? null))
+            ->map(fn (array $field): array => [
+                'id' => (string) $field['id'],
+                'label' => (string) $field['label'],
+                'type' => in_array(($field['type'] ?? 'text'), ['text', 'email'], true) ? (string) $field['type'] : 'text',
+                'max' => isset($field['max']) ? (int) $field['max'] : null,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array{id: string, label: string, type: string, max?: int, autocomplete?: string}>
+     */
+    private function normalizeReferenceFields(array $rows): array
+    {
+        $fields = [];
+        $seen = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $id = strtolower(trim((string) ($row['id'] ?? '')));
+            $label = trim((string) ($row['label'] ?? ''));
+            if ($id === '' || $label === '') {
+                continue;
+            }
+            if (isset($seen[$id])) {
+                continue;
+            }
+
+            $type = ($row['type'] ?? 'text') === 'email' ? 'email' : 'text';
+            $field = [
+                'id' => $id,
+                'label' => $label,
+                'type' => $type,
+                'autocomplete' => $type === 'email' ? 'email' : 'off',
+            ];
+
+            if (isset($row['max']) && $row['max'] !== '' && $row['max'] !== null) {
+                $field['max'] = max(1, min(255, (int) $row['max']));
+            } elseif ($type === 'text') {
+                $field['max'] = 100;
+            }
+
+            $fields[] = $field;
+            $seen[$id] = true;
+        }
+
+        return $fields;
     }
 
     /**

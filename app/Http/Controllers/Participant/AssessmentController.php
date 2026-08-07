@@ -103,8 +103,8 @@ class AssessmentController extends Controller
             abort(403);
         }
 
-        $survey = $this->baselineSurvey($slug);
         $instrument = Instrument::query()->where('slug', $slug)->firstOrFail();
+        $survey = $this->mergeInstrumentSurveyCopy($this->baselineSurvey($slug), $instrument);
         [$items, $labels] = $this->resolveSurveyContent($instrument, $survey);
         $itemIds = collect($items)->pluck('id')->all();
         $fields = $survey['fields'] ?? [];
@@ -301,6 +301,10 @@ class AssessmentController extends Controller
 
         if (array_key_exists('submit_hint', $config)) {
             $survey['submit_hint'] = $config['submit_hint'];
+        }
+
+        if (array_key_exists('fields', $config) && is_array($config['fields'])) {
+            $survey['fields'] = $config['fields'];
         }
 
         foreach (['scale_type', 'scale_mode', 'min', 'max', 'step', 'scale_labels', 'bucket_min', 'bucket_max', 'bucket_count', 'bucket_label_suffix'] as $key) {

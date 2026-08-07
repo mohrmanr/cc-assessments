@@ -56,21 +56,7 @@ return [
                 'This information will help you and your provider better understand how to work together to support your health and well-being. Collating of information for research or assessment purposes will be done without sharing any identifying information.',
                 'Your confidentiality is protected. Your identifying information will not be shared with anyone other than the therapist with whom you are working.',
             ],
-            'fields' => [
-                [
-                    'id' => 'participant_initials',
-                    'label' => 'What are the initials of your first and last name?',
-                    'type' => 'text',
-                    'max' => 10,
-                    'autocomplete' => 'off',
-                ],
-                [
-                    'id' => 'participant_email',
-                    'label' => 'What is your email address?',
-                    'type' => 'email',
-                    'autocomplete' => 'email',
-                ],
-            ],
+            'fields' => [],
             'instructions' => 'Below is a list of 10 categories of Adverse Childhood Experiences (ACEs). From the list below, please place a checkmark next to each ACE category that you experienced prior to your 18th birthday. Yes = 1, No = 0.',
             'closing' => 'Thank you for answering these questions about your childhood experiences. Your therapist will be able to talk with you about the results.',
             'items_key' => 'ace_items',
