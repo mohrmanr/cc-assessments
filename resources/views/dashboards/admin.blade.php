@@ -94,7 +94,6 @@
                                 <th class="py-2 pr-4">Participant</th>
                                 <th class="py-2 pr-4">Assessment</th>
                                 <th class="py-2 pr-4">Score</th>
-                                <th class="py-2 pr-4">Clinician</th>
                                 <th class="py-2 pr-4">Completed</th>
                                 <th class="py-2 pr-4">Actions</th>
                             </tr>
@@ -128,7 +127,6 @@
                                             <div class="text-xs text-gray-500">{{ $scoreDisplay['secondary'] }}</div>
                                         @endif
                                     </td>
-                                    <td class="py-2 pr-4 text-gray-600">{{ $result->primaryClinician?->name ?? 'Unassigned' }}</td>
                                     <td class="py-2 pr-4 text-gray-600">{{ $result->administered_at->format('M j, Y g:i A') }}</td>
                                     <td class="py-2 pr-4">
                                         <form
@@ -144,7 +142,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td colspan="6" class="pb-4 pr-4 text-xs text-gray-600">
+                                    <td colspan="5" class="pb-4 pr-4 text-xs text-gray-600">
                                         <details>
                                             <summary class="cursor-pointer font-semibold text-gray-700">View submitted responses</summary>
                                             <x-attachment-score-summary :result="$result" class="mb-3" />
@@ -179,7 +177,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-3 text-gray-500">No completed assessments yet.</td>
+                                    <td colspan="5" class="py-3 text-gray-500">No completed assessments yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>
