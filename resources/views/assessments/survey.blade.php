@@ -165,16 +165,14 @@
 
                         function syncRangeFromNumber() {
                             if (number.value === '') {
-                                range.value = String(min);
+                                setValue(min);
                                 return;
                             }
                             var parsed = Number(number.value);
                             if (Number.isNaN(parsed)) {
                                 return;
                             }
-                            var clamped = clamp(parsed);
-                            number.value = String(clamped);
-                            range.value = String(clamped);
+                            setValue(parsed);
                         }
 
                         range.addEventListener('input', syncNumberFromRange);
@@ -182,8 +180,7 @@
                         number.addEventListener('input', syncRangeFromNumber);
                         number.addEventListener('change', syncRangeFromNumber);
                         clearButton.addEventListener('click', function () {
-                            number.value = '';
-                            range.value = String(min);
+                            setValue(min);
                             number.focus();
                         });
 
@@ -198,11 +195,9 @@
 
                         var initial = root.dataset.initial || '';
                         if (initial !== '') {
-                            var clamped = clamp(Number(initial));
-                            number.value = String(clamped);
-                            range.value = String(clamped);
+                            setValue(initial);
                         } else {
-                            range.value = String(min);
+                            setValue(min);
                         }
                     });
                 }

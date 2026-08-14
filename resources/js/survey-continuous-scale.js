@@ -35,7 +35,7 @@ function initSurveyContinuousScales(scope = document) {
 
         const syncRangeFromNumber = () => {
             if (number.value === '') {
-                range.value = String(min);
+                setValue(min);
                 return;
             }
 
@@ -44,9 +44,7 @@ function initSurveyContinuousScales(scope = document) {
                 return;
             }
 
-            const clamped = clamp(parsed);
-            number.value = String(clamped);
-            range.value = String(clamped);
+            setValue(parsed);
         };
 
         range.addEventListener('input', syncNumberFromRange);
@@ -55,8 +53,7 @@ function initSurveyContinuousScales(scope = document) {
         number.addEventListener('change', syncRangeFromNumber);
 
         clearButton.addEventListener('click', () => {
-            number.value = '';
-            range.value = String(min);
+            setValue(min);
             number.focus();
         });
 
@@ -67,12 +64,9 @@ function initSurveyContinuousScales(scope = document) {
 
         const initial = root.dataset.initial ?? '';
         if (initial !== '') {
-            const clamped = clamp(Number(initial));
-            number.value = String(clamped);
-            range.value = String(clamped);
+            setValue(initial);
         } else {
-            range.value = String(min);
-            // Keep number empty until the participant chooses a value.
+            setValue(min);
         }
     });
 }

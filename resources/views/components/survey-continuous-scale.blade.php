@@ -70,9 +70,7 @@
             step="{{ $step }}"
             inputmode="numeric"
             required
-            @if ($hasInitial)
-                value="{{ (int) $initialValue }}"
-            @endif
+            value="{{ $rangeValue }}"
             style="width: 4.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.5rem; text-align: center; font-size: 0.875rem;"
         >
         <button
