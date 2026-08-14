@@ -171,22 +171,30 @@ class AttachmentQuadrantPresenter
                 $anxVals = collect($targets)->pluck('anxiety')->filter(fn ($v) => $v !== null);
                 $avdVals = collect($targets)->pluck('avoidance')->filter(fn ($v) => $v !== null);
                 if ($anxVals->isNotEmpty() && $avdVals->isNotEmpty()) {
-                    $anxiety = round((float) $anxVals->avg(), 2);
-                    $avoidance = round((float) $avdVals->avg(), 2);
+                    $anxiety = round((float) $anxVals->avg(), 1);
+                    $avoidance = round((float) $avdVals->avg(), 1);
                 }
             }
         }
 
         if ($anxiety !== null && $avoidance !== null) {
             return [
-                'primary' => number_format((float) $anxiety, 2).' / '.number_format((float) $avoidance, 2),
+                'primary' => number_format((float) $anxiety, 1).' / '.number_format((float) $avoidance, 1),
                 'secondary' => 'Anxiety / Avoidance',
                 'is_attachment' => true,
             ];
         }
 
+        if ($result->total_score === null) {
+            return [
+                'primary' => '—',
+                'secondary' => null,
+                'is_attachment' => false,
+            ];
+        }
+
         return [
-            'primary' => (string) ($result->total_score ?? '—'),
+            'primary' => number_format((float) $result->total_score, 1),
             'secondary' => null,
             'is_attachment' => false,
         ];
