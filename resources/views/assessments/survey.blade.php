@@ -153,6 +153,12 @@
                             return Math.min(max, Math.max(min, snapped));
                         }
 
+                        function setValue(value) {
+                            var clamped = clamp(Number(value));
+                            number.value = String(clamped);
+                            range.value = String(clamped);
+                        }
+
                         function syncNumberFromRange() {
                             number.value = range.value;
                         }
@@ -180,6 +186,15 @@
                             range.value = String(min);
                             number.focus();
                         });
+
+                        var minButton = root.querySelector('[data-set-min]');
+                        var maxButton = root.querySelector('[data-set-max]');
+                        if (minButton) {
+                            minButton.addEventListener('click', function () { setValue(min); });
+                        }
+                        if (maxButton) {
+                            maxButton.addEventListener('click', function () { setValue(max); });
+                        }
 
                         var initial = root.dataset.initial || '';
                         if (initial !== '') {

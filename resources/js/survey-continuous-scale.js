@@ -23,6 +23,12 @@ function initSurveyContinuousScales(scope = document) {
             return Math.min(max, Math.max(min, snapped));
         };
 
+        const setValue = (value) => {
+            const clamped = clamp(Number(value));
+            number.value = String(clamped);
+            range.value = String(clamped);
+        };
+
         const syncNumberFromRange = () => {
             number.value = range.value;
         };
@@ -53,6 +59,11 @@ function initSurveyContinuousScales(scope = document) {
             range.value = String(min);
             number.focus();
         });
+
+        const minButton = root.querySelector('[data-set-min]');
+        const maxButton = root.querySelector('[data-set-max]');
+        minButton?.addEventListener('click', () => setValue(min));
+        maxButton?.addEventListener('click', () => setValue(max));
 
         const initial = root.dataset.initial ?? '';
         if (initial !== '') {

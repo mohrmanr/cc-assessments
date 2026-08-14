@@ -29,11 +29,19 @@
         class="survey-continuous-scale__labels"
         style="display: flex; width: 100%; justify-content: space-between; gap: 0.75rem; font-size: 0.75rem; color: #4b5563; margin-bottom: 0.35rem;"
     >
-        <span style="text-align: left;">{{ $leftLabel }}</span>
+        <button
+            type="button"
+            data-set-min
+            style="border: 0; background: transparent; padding: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;"
+        >{{ $leftLabel }}</button>
         @if ($centerLabel !== '')
             <span style="text-align: center; flex: 1;">{{ $centerLabel }}</span>
         @endif
-        <span style="text-align: right;">{{ $rightLabel }}</span>
+        <button
+            type="button"
+            data-set-max
+            style="border: 0; background: transparent; padding: 0; text-align: right; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;"
+        >{{ $rightLabel }}</button>
     </div>
 
     <div class="survey-continuous-scale__range-wrap" style="width: 100%; margin-bottom: 0.5rem;">
