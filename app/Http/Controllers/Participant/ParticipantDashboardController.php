@@ -42,6 +42,7 @@ class ParticipantDashboardController extends Controller
             ->map(function (string $slug) use ($baselineResults, $instruments, $surveyConfigs): array {
                 $instrument = $instruments->get($slug);
                 $survey = $surveyConfigs->get($slug) ?? $this->surveyFromInstrument($instrument);
+                $survey = $this->overlayInstrumentCopy($survey, $instrument);
                 $result = $baselineResults->get($slug);
 
                 return [
@@ -97,5 +98,34 @@ class ParticipantDashboardController extends Controller
                 : ($portalSurvey['description'] ?? "Complete the {$instrument->name} assessment."),
             'score_max' => $config['score_max'] ?? null,
         ];
+    }
+
+    /**
+     * Admin-edited copy lives on the instrument. Config defaults only apply when that is empty.
+     *
+     * @param  array<string, mixed>  $survey
+     * @return array<string, mixed>
+     */
+    protected function overlayInstrumentCopy(array $survey, ?Instrument $instrument): array
+    {
+        if (! $instrument) {
+            return $survey;
+        }
+
+        $config = $instrument->scoring_config ?? [];
+
+        if (filled($config['description'] ?? null)) {
+            $survey['description'] = $config['description'];
+        }
+
+        if (filled($config['survey_title'] ?? null)) {
+            $survey['title'] = $config['survey_title'];
+        }
+
+        if (filled($instrument->version)) {
+            $survey['label'] = $instrument->version;
+        }
+
+        return $survey;
     }
 }

@@ -51,7 +51,7 @@ class EvaluationPortalSeeder extends Seeder
                 'scoring_config' => [
                     'threshold' => 33,
                     'method' => 'sum',
-                    'description' => 'Complete the abbreviated PCL-5 to establish your baseline PTSD symptom score.',
+                    'description' => 'Complete the PCL-5 to establish your baseline PTSD symptom score.',
                     'instructions' => 'Over the last month, how much were you bothered by each item below?',
                 ],
             ],

@@ -36,7 +36,7 @@ return [
             'store_route_name' => 'participant.assessments.pcl5.store',
             'title' => 'PCL-5 Baseline Assessment',
             'label' => 'PCL-5',
-            'description' => 'Complete the abbreviated PCL-5 to establish your baseline PTSD symptom score.',
+            'description' => 'Complete the PCL-5 to establish your baseline PTSD symptom score.',
             'instructions' => 'Over the last month, how much were you bothered by each item below?',
             'items_key' => 'pcl5_demo_items',
             'labels_key' => 'pcl5_response_labels',
