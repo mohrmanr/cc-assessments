@@ -8,6 +8,7 @@ enum UserRole: string
     case Clinician = 'clinician';
     case Admin = 'admin';
     case ClinicalSupervisor = 'clinical_supervisor';
+    case Learner = 'learner';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum UserRole: string
             self::Clinician => 'Clinician',
             self::Admin => 'Admin',
             self::ClinicalSupervisor => 'Clinical Supervisor',
+            self::Learner => 'Learner',
         };
     }
 
@@ -26,6 +28,7 @@ enum UserRole: string
             self::Clinician => 'clinician.dashboard',
             self::Admin => 'admin.dashboard',
             self::ClinicalSupervisor => 'supervisor.dashboard',
+            self::Learner => 'courses.index',
         };
     }
 }

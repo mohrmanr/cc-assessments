@@ -1,12 +1,44 @@
 # Assessment Portal
 
-Clinical assessment portal under Connections Counseling. Participants complete eligibility screening before receiving an account, then take standardized scales whose scores clinicians use to guide specialized treatment.
+Laravel application for Connections Counseling. It hosts Clinical Assessment (screening, scales, clinicians) and Course (continuing-education video workflows that replace the legacy BPTI site).
 
 ## Language
 
 **Assessment Portal**:
-The new web application for pre-account screening, standardized assessments, score storage, and clinician–participant communication.
-_Avoid_: BPTI, training site, course platform
+The Laravel web application that hosts Connections Counseling products, currently clinical assessment and continuing-education courses.
+_Avoid_: BPTI, the site, Connections Counseling site (parent org is broader)
+
+**Clinical Assessment**:
+The product inside the Assessment Portal for eligibility screening, standardized scales, scores, and clinician–participant work.
+_Avoid_: Course platform, training site
+
+**Course**:
+A continuing-education offering with a gated workflow (access, optional pretest, video, posttest, score, certificate). Distinct from clinical assessment.
+_Avoid_: Module, webinar (those are steps), treatment track
+
+**Courses List**:
+The Learner home for the Course product: Courses they can purchase or already have Course Access to. Shown in nav when the Account has the Learner role.
+_Avoid_: All courses (BPTI page name), catalog (until we need a public shop)
+
+**Course Workflow**:
+The six-step page for one Course: Pay, Pretest, Course Video, Posttest, Score, Certificate. Steps enable in order.
+_Avoid_: Coursepage, pipeline
+
+**Learner**:
+A Role that lets an Account take Courses.
+_Avoid_: Student, trainee, participant (clinical Role)
+
+**Role**:
+An enabled capability on an Account. An Account may have more than one Role at once (e.g. Learner and Admin). Admins grant and revoke Roles.
+_Avoid_: User type, account type
+
+**Course Access**:
+Permission for an Account to proceed through a specific Course. Granted by Purchase when that Course requires payment, or by an Admin without payment.
+_Avoid_: Enrollment (clinical-adjacent), access code (BPTI mechanism)
+
+**Purchase**:
+The Pay step for a Course that requires payment. Completing Purchase grants Course Access for that Course only. A live payment processor is not required for the first Course; a recorded stub Purchase is enough to unlock the workflow.
+_Avoid_: Transaction, checkout (until a processor is chosen)
 
 **Participant**:
 A person seeking assessment or treatment who may complete screening and scales through the portal.
@@ -62,7 +94,31 @@ _Avoid_: Emergency, crisis (too broad without definition)
 
 **Assessment Schedule**:
 Participants complete multiple assessments: the full intake battery at account start, then repeated administrations of selected instruments (e.g. PTSD, dissociation, self-efficacy) on a treatment timeline.
-_Avoid_: One-time quiz, pretest/posttest (BPTI terminology)
+_Avoid_: One-time quiz
+
+**Pretest**:
+An optional Course Quiz before the video. If the Course has a Pretest, submitting it unlocks the video. Score is stored for comparison; a passing Pretest score is not required.
+_Avoid_: Survey (SurveyMonkey), baseline assessment
+
+**Posttest**:
+The required Course quiz after the video. Completing it produces a Score. Not a clinical Assessment.
+_Avoid_: Survey (SurveyMonkey), re-assessment
+
+**Course Quiz**:
+A scored question set attached to a Course as Pretest or Posttest. Admins edit it separately from clinical Instruments (questions, choices, correct answers, Pass Mark). Learners take it in the existing survey-style UI. Replaces SurveyMonkey for CE.
+_Avoid_: Instrument, Assessment, SurveyMonkey survey
+
+**Pass Mark**:
+The minimum Posttest Score that unlocks Certificate. Set per Course. The first Course uses 75%.
+_Avoid_: Threshold (clinical treatment term)
+
+**Score**:
+The Learner's Posttest result for a Course. Always visible after Posttest. Certificate unlocks only when Score meets the Pass Mark.
+_Avoid_: Get Score (button label only), assessment result (clinical)
+
+**Certificate**:
+A simple generated PDF for a Course (Learner name, title, date, Score), available only after a passing Score. Artwork can be replaced later. Admins may reset a failed Posttest so the Learner can retake it once more.
+_Avoid_: Transcript, CEU file (until credit rules are defined)
 
 **Assessment Battery**:
 A grouped set of instruments assigned together, such as the launch intake battery containing PCL-5, DES-II, ACE Questionnaire, GSE, and ECR-R.
@@ -101,12 +157,12 @@ An automated portal-generated entry in a message thread (e.g. assessment complet
 _Avoid_: Notification, alert (those are delivery mechanisms, not the record itself)
 
 **Account**:
-A participant or clinician identity with email-and-password authentication, created only after eligibility approval (participants) or admin provisioning (clinicians).
-_Avoid_: User (BPTI term), login
+An authenticated identity (email and password). Roles on the Account determine which products they can use. Participants still receive an Account only after eligibility approval. For the first Course, Admins create Accounts and enable the Learner Role; public Course signup is later.
+_Avoid_: Login; user as a synonym for a single Role
 
 **BPTI Training Platform**:
-The existing continuing-education product for social-services professionals. A separate product from the Assessment Portal — different people, different purpose.
-_Avoid_: The site, Connections Counseling site (parent org is broader)
+The legacy PHP continuing-education site (`bpti/`) being replaced by Course in the Assessment Portal. SurveyMonkey was its external pretest/posttest host. It stays live until each Course is migrated; the first Course runs in parallel and does not shut BPTI off.
+_Avoid_: The site, Connections Counseling site
 
 **Instrument**:
 A specific validated scale used in an assessment, identified by name and version (e.g. PCL-5). Launch set is fixed; additional instruments may be added later without breaking historical results.
@@ -118,7 +174,7 @@ _Avoid_: PTSD test, attachment scale (informal)
 
 **Treatment (v1)**:
 Coordination hub only — screening, assessments, scores, messaging, and track assignment. Therapy is delivered outside the portal (in person or external telehealth).
-_Avoid_: Course, module (BPTI terminology)
+_Avoid_: Module (BPTI step)
 
 **Treatment Content (planned)**:
 Structured self-help materials (modules, worksheets, psychoeducation) delivered in the portal between clinician messages. Out of scope for v1 launch.

@@ -15,6 +15,16 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    @if (Auth::user()->loadMissing('assignedRoles') && Auth::user()->isLearner())
+                        <x-nav-link :href="route('courses.index')" :active="request()->routeIs('courses.*')">
+                            Courses
+                        </x-nav-link>
+                    @endif
+                    @if (Auth::user()->isAdmin())
+                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                            Users
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -70,6 +80,16 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            @if (Auth::user()->isLearner())
+                <x-responsive-nav-link :href="route('courses.index')" :active="request()->routeIs('courses.*')">
+                    Courses
+                </x-responsive-nav-link>
+            @endif
+            @if (Auth::user()->isAdmin())
+                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                    Users
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

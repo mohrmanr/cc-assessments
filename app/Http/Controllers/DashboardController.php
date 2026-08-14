@@ -10,7 +10,8 @@ class DashboardController extends Controller
     public function __invoke(): RedirectResponse
     {
         $user = auth()->user();
+        $user->loadMissing('assignedRoles');
 
-        return redirect()->route($user->role->dashboardRoute());
+        return redirect()->route($user->preferredDashboardRoute());
     }
 }

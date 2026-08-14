@@ -59,23 +59,106 @@ class User extends Authenticatable
         return $this->hasMany(MessageThread::class, 'clinician_id');
     }
 
+    public function assignedRoles(): HasMany
+    {
+        return $this->hasMany(UserRoleAssignment::class);
+    }
+
+    public function courseAccesses(): HasMany
+    {
+        return $this->hasMany(CourseAccess::class);
+    }
+
+    /**
+     * @return list<UserRole>
+     */
+    public function roleList(): array
+    {
+        $fromPivot = $this->assignedRoles
+            ->pluck('role')
+            ->map(fn (string $role): UserRole => UserRole::from($role))
+            ->all();
+
+        if ($fromPivot !== []) {
+            return $fromPivot;
+        }
+
+        return $this->role instanceof UserRole ? [$this->role] : [];
+    }
+
+    public function hasRole(UserRole $role): bool
+    {
+        return in_array($role, $this->roleList(), true);
+    }
+
+    public function grantRole(UserRole $role): void
+    {
+        UserRoleAssignment::query()->firstOrCreate([
+            'user_id' => $this->id,
+            'role' => $role->value,
+        ]);
+
+        if ($this->role === null) {
+            $this->forceFill(['role' => $role])->save();
+        }
+    }
+
+    public function revokeRole(UserRole $role): void
+    {
+        UserRoleAssignment::query()
+            ->where('user_id', $this->id)
+            ->where('role', $role->value)
+            ->delete();
+
+        if ($this->role === $role) {
+            $remaining = UserRoleAssignment::query()
+                ->where('user_id', $this->id)
+                ->value('role');
+            if ($remaining) {
+                $this->forceFill(['role' => UserRole::from($remaining)])->save();
+            }
+        }
+    }
+
     public function isParticipant(): bool
     {
-        return $this->role === UserRole::Participant;
+        return $this->hasRole(UserRole::Participant);
     }
 
     public function isClinician(): bool
     {
-        return $this->role === UserRole::Clinician;
+        return $this->hasRole(UserRole::Clinician);
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === UserRole::Admin;
+        return $this->hasRole(UserRole::Admin);
     }
 
     public function isClinicalSupervisor(): bool
     {
-        return $this->role === UserRole::ClinicalSupervisor;
+        return $this->hasRole(UserRole::ClinicalSupervisor);
+    }
+
+    public function isLearner(): bool
+    {
+        return $this->hasRole(UserRole::Learner);
+    }
+
+    public function preferredDashboardRoute(): string
+    {
+        foreach ([
+            UserRole::Admin,
+            UserRole::ClinicalSupervisor,
+            UserRole::Clinician,
+            UserRole::Participant,
+            UserRole::Learner,
+        ] as $role) {
+            if ($this->hasRole($role)) {
+                return $role->dashboardRoute();
+            }
+        }
+
+        return $this->role?->dashboardRoute() ?? 'dashboard';
     }
 }

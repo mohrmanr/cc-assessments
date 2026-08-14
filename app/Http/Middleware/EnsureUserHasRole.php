@@ -20,15 +20,19 @@ class EnsureUserHasRole
             abort(403);
         }
 
+        $user->loadMissing('assignedRoles');
+
         $allowed = collect($roles)
             ->flatMap(fn (string $role) => explode(',', $role))
             ->map(fn (string $role) => UserRole::from(trim($role)))
             ->all();
 
-        if (! in_array($user->role, $allowed, true)) {
-            abort(403);
+        foreach ($allowed as $role) {
+            if ($user->hasRole($role)) {
+                return $next($request);
+            }
         }
 
-        return $next($request);
+        abort(403);
     }
 }

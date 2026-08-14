@@ -3,6 +3,8 @@
 use App\Http\Controllers\AccountActivationController;
 use App\Http\Controllers\Admin\AssessmentUploadController;
 use App\Http\Controllers\Admin\InstrumentController;
+use App\Http\Controllers\Admin\UserAdminController;
+use App\Http\Controllers\Learner\CourseController;
 use App\Http\Controllers\Clinician\CaseloadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Participant\AssessmentController;
@@ -25,6 +27,21 @@ Route::post('/activate/{token}', [AccountActivationController::class, 'store'])-
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::middleware(['auth', 'verified', 'role:learner,admin'])->group(function () {
+    Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
+    Route::get('/courses/{course:slug}', [CourseController::class, 'show'])->name('courses.show');
+    Route::post('/courses/{course:slug}/pay', [CourseController::class, 'pay'])->name('courses.pay');
+    Route::get('/courses/{course:slug}/video', [CourseController::class, 'showVideo'])->name('courses.video');
+    Route::post('/courses/{course:slug}/video', [CourseController::class, 'completeVideo'])->name('courses.video.complete');
+    Route::get('/courses/{course:slug}/certificate', [CourseController::class, 'certificate'])->name('courses.certificate');
+    Route::get('/courses/{course:slug}/{kind}', [CourseController::class, 'showQuiz'])
+        ->whereIn('kind', ['pretest', 'posttest'])
+        ->name('courses.quiz');
+    Route::post('/courses/{course:slug}/{kind}', [CourseController::class, 'storeQuiz'])
+        ->whereIn('kind', ['pretest', 'posttest'])
+        ->name('courses.quiz.store');
+});
 
 Route::middleware(['auth', 'verified', 'role:participant'])->group(function () {
     Route::get('/participant', [ParticipantDashboardController::class, 'index'])->name('participant.dashboard');
@@ -61,6 +78,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
         ->name('admin.instruments.questions.import');
     Route::get('/admin/instruments/{instrument}/questions/template.csv', [InstrumentController::class, 'downloadQuestionsTemplate'])
         ->name('admin.instruments.questions.template');
+    Route::get('/admin/users', [UserAdminController::class, 'index'])->name('admin.users.index');
+    Route::post('/admin/users', [UserAdminController::class, 'store'])->name('admin.users.store');
+    Route::post('/admin/users/{user}/roles', [UserAdminController::class, 'updateRoles'])->name('admin.users.roles');
+    Route::post('/admin/users/{user}/courses', [UserAdminController::class, 'grantCourse'])->name('admin.users.courses');
+    Route::post('/admin/users/{user}/posttest-reset', [UserAdminController::class, 'resetPosttest'])->name('admin.users.posttest-reset');
 });
 
 Route::middleware(['auth', 'verified', 'role:clinical_supervisor'])->group(function () {
