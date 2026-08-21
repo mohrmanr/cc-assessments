@@ -57,6 +57,12 @@ class UserAdminController extends Controller
         $selected = collect($validated['roles'] ?? [])
             ->map(fn (string $role) => UserRole::from($role));
 
+        if ($selected->contains(UserRole::Learner) && $selected->contains(UserRole::Participant)) {
+            return redirect()
+                ->route('admin.users.index')
+                ->withErrors(['roles' => 'Learner and Participant cannot both be enabled on the same account.']);
+        }
+
         foreach (UserRole::cases() as $role) {
             if ($selected->contains($role)) {
                 $user->grantRole($role);
@@ -70,6 +76,13 @@ class UserAdminController extends Controller
 
     public function grantCourse(Request $request, User $user, CourseWorkflow $workflow): RedirectResponse
     {
+        $user->loadMissing('assignedRoles');
+        if ($user->isParticipant()) {
+            return redirect()
+                ->route('admin.users.index')
+                ->withErrors(['roles' => "Cannot grant course access while {$user->name} is a Participant. Remove Participant first, or use a Learner account."]);
+        }
+
         $validated = $request->validate([
             'course_id' => ['required', 'exists:courses,id'],
         ]);

@@ -51,14 +51,31 @@
                                     <p class="text-gray-500">{{ $user->email }}</p>
                                 </td>
                                 <td class="px-4 py-4 align-top">
-                                    <form method="POST" action="{{ route('admin.users.roles', $user) }}" class="space-y-2">
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.users.roles', $user) }}"
+                                        class="space-y-2"
+                                        x-data="{
+                                            learner: {{ $user->hasRole(\App\Enums\UserRole::Learner) ? 'true' : 'false' }},
+                                            participant: {{ $user->hasRole(\App\Enums\UserRole::Participant) ? 'true' : 'false' }},
+                                            pickLearner() { this.learner = true; this.participant = false; },
+                                            pickParticipant() { this.participant = true; this.learner = false; },
+                                        }"
+                                    >
                                         @csrf
                                         @foreach ($roles as $role)
                                             <label class="flex items-center gap-2">
-                                                <input type="checkbox" name="roles[]" value="{{ $role->value }}" @checked($user->hasRole($role))>
+                                                @if ($role === \App\Enums\UserRole::Learner)
+                                                    <input type="checkbox" name="roles[]" value="{{ $role->value }}" x-model="learner" @change="if (learner) pickLearner()">
+                                                @elseif ($role === \App\Enums\UserRole::Participant)
+                                                    <input type="checkbox" name="roles[]" value="{{ $role->value }}" x-model="participant" @change="if (participant) pickParticipant()">
+                                                @else
+                                                    <input type="checkbox" name="roles[]" value="{{ $role->value }}" @checked($user->hasRole($role))>
+                                                @endif
                                                 {{ $role->label() }}
                                             </label>
                                         @endforeach
+                                        <p class="text-xs text-gray-500">Learner and Participant are mutually exclusive.</p>
                                         <button type="submit" class="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">Save roles</button>
                                     </form>
                                 </td>
