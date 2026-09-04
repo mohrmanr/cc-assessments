@@ -242,7 +242,7 @@
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
                     <div>
                         <h3 class="font-semibold text-gray-900">Questions</h3>
-                        <p class="text-xs text-gray-500">Attributes stay compact on the left; question text uses the rest of the row.</p>
+                        <p class="text-xs text-gray-500">Use Up/Down to set display order. Save to apply. Attributes stay compact on the left; question text uses the rest of the row.</p>
                     </div>
                     <button type="button" id="add-item" class="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Add question</button>
                 </div>
@@ -262,7 +262,7 @@
                                 </div>
                             @endif
                             <div class="min-w-0 flex-1">Question</div>
-                            <div class="w-14 shrink-0 text-center"></div>
+                            <div class="w-28 shrink-0 text-center">Order</div>
                         </div>
 
                         <div id="item-rows" class="divide-y divide-gray-100">
@@ -294,7 +294,11 @@
                             <div class="min-w-0 flex-1">
                                 <textarea name="items[{{ $index }}][text]" required rows="1" class="question-input block w-full rounded border-gray-300 text-sm leading-snug resize-y min-h-[2.25rem]" aria-label="Question text">{{ $item['text'] }}</textarea>
                             </div>
-                            <div class="w-14 shrink-0 pt-1 text-center">
+                            <div class="w-28 shrink-0 pt-1 flex flex-col items-center gap-1">
+                                <div class="flex items-center gap-1">
+                                    <button type="button" class="move-item-up rounded border border-gray-300 px-1.5 py-0.5 text-xs font-semibold text-gray-700 hover:bg-gray-50" title="Move up" aria-label="Move question up">Up</button>
+                                    <button type="button" class="move-item-down rounded border border-gray-300 px-1.5 py-0.5 text-xs font-semibold text-gray-700 hover:bg-gray-50" title="Move down" aria-label="Move question down">Down</button>
+                                </div>
                                 <button type="button" class="remove-item text-xs font-semibold text-red-600 hover:text-red-700">Remove</button>
                             </div>
                         </div>
@@ -340,7 +344,11 @@
             <div class="min-w-0 flex-1">
                 <textarea data-name="text" required rows="1" class="question-input block w-full rounded border-gray-300 text-sm leading-snug resize-y min-h-[2.25rem]" aria-label="Question text"></textarea>
             </div>
-            <div class="w-14 shrink-0 pt-1 text-center">
+            <div class="w-28 shrink-0 pt-1 flex flex-col items-center gap-1">
+                <div class="flex items-center gap-1">
+                    <button type="button" class="move-item-up rounded border border-gray-300 px-1.5 py-0.5 text-xs font-semibold text-gray-700 hover:bg-gray-50" title="Move up" aria-label="Move question up">Up</button>
+                    <button type="button" class="move-item-down rounded border border-gray-300 px-1.5 py-0.5 text-xs font-semibold text-gray-700 hover:bg-gray-50" title="Move down" aria-label="Move question down">Down</button>
+                </div>
                 <button type="button" class="remove-item text-xs font-semibold text-red-600 hover:text-red-700">Remove</button>
             </div>
         </div>
@@ -361,7 +369,8 @@
         }
 
         function reindexItems() {
-            document.querySelectorAll('#item-rows .item-row').forEach((row, index) => {
+            const rows = document.querySelectorAll('#item-rows .item-row');
+            rows.forEach((row, index) => {
                 const number = row.querySelector('.item-number');
                 if (number) number.textContent = String(index + 1);
                 row.querySelectorAll('[data-name]').forEach((input) => {
@@ -372,7 +381,23 @@
                     const match = input.name.match(/\[([^\]]+)\]$/);
                     if (match) input.name = `items[${index}][${match[1]}]`;
                 });
+                const up = row.querySelector('.move-item-up');
+                const down = row.querySelector('.move-item-down');
+                if (up) up.disabled = index === 0;
+                if (down) down.disabled = index === rows.length - 1;
             });
+        }
+
+        function moveItemRow(row, direction) {
+            if (!row) return;
+            const sibling = direction === 'up' ? row.previousElementSibling : row.nextElementSibling;
+            if (!sibling || !sibling.classList.contains('item-row')) return;
+            if (direction === 'up') {
+                row.parentElement.insertBefore(row, sibling);
+            } else {
+                row.parentElement.insertBefore(sibling, row);
+            }
+            reindexItems();
         }
 
         function autoResize(textarea) {
@@ -485,9 +510,16 @@
                 event.target.closest('.item-row')?.remove();
                 reindexItems();
             }
+            if (event.target.classList.contains('move-item-up')) {
+                moveItemRow(event.target.closest('.item-row'), 'up');
+            }
+            if (event.target.classList.contains('move-item-down')) {
+                moveItemRow(event.target.closest('.item-row'), 'down');
+            }
         });
 
         bindQuestionInputs();
+        reindexItems();
         toggleScalePanels();
     </script>
 </x-app-layout>
