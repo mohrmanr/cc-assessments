@@ -41,6 +41,7 @@
                             <th class="px-4 py-3">Account</th>
                             <th class="px-4 py-3">Roles</th>
                             <th class="px-4 py-3">Course access</th>
+                            <th class="px-4 py-3">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -98,6 +99,23 @@
                                         </select>
                                         <button type="submit" class="rounded-md border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">Reset posttest</button>
                                     </form>
+                                </td>
+                                <td class="px-4 py-4 align-top">
+                                    @if ($user->id === auth()->id())
+                                        <p class="text-xs text-gray-500">Current account</p>
+                                    @else
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.users.destroy', $user) }}"
+                                            onsubmit="return confirm('Delete {{ $user->name }} ({{ $user->email }})? This cannot be undone.')"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="rounded-md border border-red-300 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100">
+                                                Delete account
+                                            </button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

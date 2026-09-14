@@ -83,6 +83,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::post('/admin/users/{user}/roles', [UserAdminController::class, 'updateRoles'])->name('admin.users.roles');
     Route::post('/admin/users/{user}/courses', [UserAdminController::class, 'grantCourse'])->name('admin.users.courses');
     Route::post('/admin/users/{user}/posttest-reset', [UserAdminController::class, 'resetPosttest'])->name('admin.users.posttest-reset');
+    Route::delete('/admin/users/{user}', [UserAdminController::class, 'destroy'])->name('admin.users.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'role:clinical_supervisor'])->group(function () {

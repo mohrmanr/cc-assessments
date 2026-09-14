@@ -100,6 +100,8 @@ class AssessmentUploadController extends Controller
 
             fputcsv($handle, [
                 'assessment_result_id',
+                'user_id',
+                'participant_id',
                 'participant_name',
                 'participant_email',
                 'instrument_slug',
@@ -126,6 +128,8 @@ class AssessmentUploadController extends Controller
 
                         fputcsv($handle, [
                             $result->id,
+                            $result->participant->user_id,
+                            $result->participant->id,
                             $result->participant->user->name,
                             $result->participant->user->email,
                             $result->instrument->slug,

@@ -103,4 +103,35 @@ class UserAdminController extends Controller
 
         return redirect()->route('admin.users.index')->with('status', "Reset posttest for {$user->name} on {$course->title}.");
     }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        if ($user->id === auth()->id()) {
+            return redirect()
+                ->route('admin.users.index')
+                ->withErrors(['user' => 'You cannot delete your own account.']);
+        }
+
+        $user->loadMissing('assignedRoles');
+        if ($user->isAdmin()) {
+            $otherAdmins = User::query()
+                ->where('id', '!=', $user->id)
+                ->where(function ($query): void {
+                    $query->where('role', UserRole::Admin->value)
+                        ->orWhereHas('assignedRoles', fn ($roles) => $roles->where('role', UserRole::Admin->value));
+                })
+                ->exists();
+
+            if (! $otherAdmins) {
+                return redirect()
+                    ->route('admin.users.index')
+                    ->withErrors(['user' => 'Cannot delete the last Admin account.']);
+            }
+        }
+
+        $label = "{$user->name} ({$user->email})";
+        $user->delete();
+
+        return redirect()->route('admin.users.index')->with('status', "Deleted account {$label}.");
+    }
 }
