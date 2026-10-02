@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UserAdminController extends Controller
 {
@@ -24,6 +25,37 @@ class UserAdminController extends Controller
         $roles = UserRole::cases();
 
         return view('dashboards.admin-users', compact('users', 'courses', 'roles'));
+    }
+
+    public function download(): StreamedResponse
+    {
+        $filename = 'user-ids-'.now()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function (): void {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['user_id', 'participant_id', 'name', 'email', 'roles', 'is_active', 'created_at']);
+
+            User::query()
+                ->with(['assignedRoles', 'participantProfile'])
+                ->orderBy('id')
+                ->chunkById(200, function ($users) use ($handle): void {
+                    foreach ($users as $user) {
+                        fputcsv($handle, [
+                            $user->id,
+                            $user->participantProfile?->id,
+                            $user->name,
+                            $user->email,
+                            collect($user->roleList())->map(fn (UserRole $role) => $role->label())->implode('; '),
+                            $user->is_active ? 'yes' : 'no',
+                            $user->created_at?->toIso8601String(),
+                        ]);
+                    }
+                });
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
     }
 
     public function store(Request $request): RedirectResponse

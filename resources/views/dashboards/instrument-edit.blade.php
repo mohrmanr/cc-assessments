@@ -137,7 +137,7 @@
             <div class="bg-white shadow-sm rounded-lg p-4 space-y-4">
                 <div>
                     <h3 class="text-sm font-semibold text-gray-900">Answer scale</h3>
-                    <p class="mt-1 text-xs text-gray-500">Choose how participants answer each question.</p>
+                    <p class="mt-1 text-xs text-gray-500">Used by questions whose answer is set to Shared scale. Questions with their own choices, numbers, or text ignore this.</p>
                 </div>
 
                 @php
@@ -271,6 +271,12 @@
                         $itemRows = is_array($oldItems) ? $oldItems : $items;
                     @endphp
                     @foreach ($itemRows as $index => $item)
+                        @php
+                            $itemType = \App\Support\SurveyItem::type($item);
+                            $itemOptionsText = is_array($item['options'] ?? null)
+                                ? \App\Support\SurveyItem::optionsText($item['options'])
+                                : (string) ($item['options'] ?? '');
+                        @endphp
                         <div class="item-row flex items-start gap-2 px-3 py-2">
                             <div class="w-7 shrink-0 pt-2 text-center text-xs text-gray-500 item-number">{{ $index + 1 }}</div>
                             <div class="w-[7.5rem] shrink-0">
@@ -293,6 +299,23 @@
                             @endif
                             <div class="min-w-0 flex-1">
                                 <textarea name="items[{{ $index }}][text]" required rows="1" class="question-input block w-full rounded border-gray-300 text-sm leading-snug resize-y min-h-[2.25rem]" aria-label="Question text">{{ $item['text'] }}</textarea>
+                                <div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                                    <label class="inline-flex items-center gap-1" title="Shared scale uses the Answer scale above and counts toward the score. Own choices, Number, and Text are never scored.">
+                                        Answer
+                                        <select name="items[{{ $index }}][type]" class="item-type-select rounded border-gray-300 py-0.5 text-xs">
+                                            <option value="scale" @selected($itemType === 'scale')>Shared scale</option>
+                                            <option value="choice" @selected($itemType === 'choice')>Own choices</option>
+                                            <option value="number" @selected($itemType === 'number')>Number</option>
+                                            <option value="text" @selected($itemType === 'text')>Text</option>
+                                        </select>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1">
+                                        <input type="hidden" name="items[{{ $index }}][required]" value="0">
+                                        <input type="checkbox" name="items[{{ $index }}][required]" value="1" @checked(\App\Support\SurveyItem::isRequired($item)) class="rounded border-gray-300 text-indigo-600">
+                                        Required
+                                    </label>
+                                </div>
+                                <textarea name="items[{{ $index }}][options]" rows="3" @class(['item-options-input mt-1 block w-full rounded border-gray-300 font-mono text-xs', 'hidden' => $itemType !== 'choice']) placeholder="One choice per line: code = label&#10;1 = Yes&#10;0 = No" aria-label="Answer choices">{{ $itemOptionsText }}</textarea>
                             </div>
                             <div class="w-28 shrink-0 pt-1 flex flex-col items-center gap-1">
                                 <div class="flex items-center gap-1">
@@ -343,6 +366,23 @@
             @endif
             <div class="min-w-0 flex-1">
                 <textarea data-name="text" required rows="1" class="question-input block w-full rounded border-gray-300 text-sm leading-snug resize-y min-h-[2.25rem]" aria-label="Question text"></textarea>
+                <div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                    <label class="inline-flex items-center gap-1" title="Shared scale uses the Answer scale above and counts toward the score. Own choices, Number, and Text are never scored.">
+                        Answer
+                        <select data-name="type" class="item-type-select rounded border-gray-300 py-0.5 text-xs">
+                            <option value="scale" selected>Shared scale</option>
+                            <option value="choice">Own choices</option>
+                            <option value="number">Number</option>
+                            <option value="text">Text</option>
+                        </select>
+                    </label>
+                    <label class="inline-flex items-center gap-1">
+                        <input type="hidden" data-name="required" value="0">
+                        <input type="checkbox" data-name="required" value="1" checked class="rounded border-gray-300 text-indigo-600">
+                        Required
+                    </label>
+                </div>
+                <textarea data-name="options" rows="3" class="item-options-input hidden mt-1 block w-full rounded border-gray-300 font-mono text-xs" placeholder="One choice per line: code = label&#10;1 = Yes&#10;0 = No" aria-label="Answer choices"></textarea>
             </div>
             <div class="w-28 shrink-0 pt-1 flex flex-col items-center gap-1">
                 <div class="flex items-center gap-1">
@@ -497,6 +537,14 @@
             document.getElementById('item-rows').appendChild(clone);
             reindexItems();
             bindQuestionInputs(document.getElementById('item-rows').lastElementChild);
+        });
+
+        document.addEventListener('change', (event) => {
+            if (event.target.classList.contains('item-type-select')) {
+                event.target.closest('.item-row')
+                    ?.querySelector('.item-options-input')
+                    ?.classList.toggle('hidden', event.target.value !== 'choice');
+            }
         });
 
         document.addEventListener('click', (event) => {

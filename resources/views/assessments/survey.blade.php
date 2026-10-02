@@ -29,7 +29,8 @@
 
                 <p class="text-sm text-gray-600">
                     {{ $survey['instructions'] }}
-                    @if (($survey['scale_type'] ?? 'discrete') === 'continuous')
+                    @if (! \App\Support\SurveyItem::usesSharedScale($items))
+                    @elseif (($survey['scale_type'] ?? 'discrete') === 'continuous')
                         Set a value from {{ $survey['min'] ?? 0 }} to {{ $survey['max'] ?? 100 }} for each item, then submit.
                     @else
                         Select one answer per question, then submit.
@@ -85,12 +86,45 @@
                         @endif
 
                         @foreach ($groupItems as $item)
-                            @php $questionNumber++; @endphp
+                            @php
+                                $questionNumber++;
+                                $itemType = \App\Support\SurveyItem::type($item);
+                                $itemRequired = \App\Support\SurveyItem::isRequired($item);
+                            @endphp
                             <fieldset style="border: none; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem; margin-bottom: 1.5rem;">
                                 <legend style="font-size: 0.875rem; font-weight: 500; color: #111827; margin-bottom: 0.5rem;">
                                     {{ $questionNumber }}. {{ $item['text'] }}
+                                    @unless ($itemRequired)
+                                        <span style="font-weight: 400; color: #6b7280;">(optional)</span>
+                                    @endunless
                                 </legend>
-                                @if (($survey['scale_type'] ?? 'discrete') === 'continuous')
+                                @if ($itemType === 'text')
+                                    <textarea
+                                        name="{{ $item['id'] }}"
+                                        rows="2"
+                                        maxlength="{{ \App\Support\SurveyItem::TEXT_MAX }}"
+                                        @required($itemRequired)
+                                        style="display: block; width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.875rem;"
+                                    >{{ old($item['id']) }}</textarea>
+                                @elseif ($itemType === 'number')
+                                    <input
+                                        type="number"
+                                        name="{{ $item['id'] }}"
+                                        value="{{ old($item['id']) }}"
+                                        min="0"
+                                        max="{{ \App\Support\SurveyItem::NUMBER_MAX }}"
+                                        step="1"
+                                        inputmode="numeric"
+                                        @required($itemRequired)
+                                        style="display: block; width: 8rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.875rem;"
+                                    >
+                                @elseif ($itemType === 'choice')
+                                    <x-survey-answer-scale
+                                        :name="$item['id']"
+                                        :labels="\App\Support\SurveyItem::choices($item, $labels)"
+                                        :required="$itemRequired"
+                                    />
+                                @elseif (($survey['scale_type'] ?? 'discrete') === 'continuous')
                                     <x-survey-continuous-scale
                                         :name="$item['id']"
                                         :min="$survey['min'] ?? 0"
@@ -104,8 +138,12 @@
                                         :name="$item['id']"
                                         :labels="$labels"
                                         :default="$survey['default'] ?? null"
+                                        :required="$itemRequired"
                                     />
                                 @endif
+                                @error($item['id'])
+                                    <p style="margin-top: 0.375rem; font-size: 0.75rem; color: #b91c1c;">{{ $message }}</p>
+                                @enderror
                             </fieldset>
                         @endforeach
                     @endforeach

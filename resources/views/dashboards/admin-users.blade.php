@@ -35,9 +35,16 @@
             </div>
 
             <div class="bg-white shadow-sm rounded-lg overflow-x-auto">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
+                    <p class="text-sm text-gray-600">User ID is the permanent number for each account. Use it to de-identify exported data.</p>
+                    <a href="{{ route('admin.users.download') }}" class="inline-flex justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+                        Download ID list (CSV)
+                    </a>
+                </div>
                 <table class="min-w-full text-sm">
                     <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
                         <tr>
+                            <th class="px-4 py-3">User ID</th>
                             <th class="px-4 py-3">Account</th>
                             <th class="px-4 py-3">Roles</th>
                             <th class="px-4 py-3">Course access</th>
@@ -47,6 +54,7 @@
                     <tbody class="divide-y divide-gray-100">
                         @foreach ($users as $user)
                             <tr>
+                                <td class="px-4 py-4 align-top font-mono text-sm font-semibold text-gray-900">{{ $user->id }}</td>
                                 <td class="px-4 py-4 align-top">
                                     <p class="font-semibold text-gray-900">{{ $user->name }}</p>
                                     <p class="text-gray-500">{{ $user->email }}</p>

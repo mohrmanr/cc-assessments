@@ -95,7 +95,7 @@
                                             @foreach ($itemResponses as $itemId => $value)
                                                 <div>
                                                     <dt class="text-gray-700">{{ $itemsById[$itemId]['text'] ?? $itemId }}</dt>
-                                                    <dd class="text-gray-900">Response: {{ $value }}</dd>
+                                                    <dd class="text-gray-900">Response: {{ \App\Support\SurveyItem::displayValue($itemsById[$itemId] ?? null, $value, $result->instrument->scoring_config['response_labels'] ?? []) }}</dd>
                                                 </div>
                                             @endforeach
                                         </dl>

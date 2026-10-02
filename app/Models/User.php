@@ -68,7 +68,6 @@ class User extends Authenticatable
     {
         return $this->hasMany(CourseAccess::class);
     }
-
     /**
      * @return list<UserRole>
      */

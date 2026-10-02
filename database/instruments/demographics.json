@@ -1,0 +1,119 @@
+{
+  "slug": "demographics",
+  "name": "Demographic Survey",
+  "version": "Demographics",
+  "domain": "demographics",
+  "description": "A short set of background questions for the Trauma study.",
+  "instructions": "Please answer each question. Questions marked (optional) can be left blank.",
+  "intro": [
+    "We need these data to complete the confidential information concerning the Trauma study."
+  ],
+  "closing": "Thank you for completing this part of the survey.",
+  "scoring_config": {
+    "method": "none"
+  },
+  "items": [
+    {
+      "id": "gender",
+      "text": "What is your gender?",
+      "type": "choice",
+      "options": {"1": "Male", "2": "Female", "3": "Other"}
+    },
+    {
+      "id": "english_first_language",
+      "text": "Is English your first language?",
+      "type": "choice",
+      "options": {"1": "Yes", "0": "No"}
+    },
+    {
+      "id": "first_language",
+      "text": "If English is not your first language, what is your first language?",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "parents_divorced_before_18",
+      "text": "Before you were 18 years, were your parents divorced (or if they were never married, were they separated before you were 18 years)?",
+      "type": "choice",
+      "options": {"1": "Yes", "0": "No"}
+    },
+    {
+      "id": "moves_before_18",
+      "text": "How many times did you move (locations) before you were 18?",
+      "type": "number"
+    },
+    {
+      "id": "siblings_by_18",
+      "text": "How many siblings did you have by the time you were 18? (Count half-sibs and step-sibs if they lived with you before 18, otherwise no.)",
+      "type": "number"
+    },
+    {
+      "id": "siblings_comment",
+      "text": "Comments about your siblings",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "marital_status",
+      "text": "What is your marital status?",
+      "type": "choice",
+      "options": {"1": "Married", "2": "Partnered", "3": "Single", "4": "Divorced", "5": "Widowed", "6": "Other"}
+    },
+    {
+      "id": "marital_status_comment",
+      "text": "Comments about your marital status",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "ethnicity",
+      "text": "With which ethnicity do you identify?",
+      "type": "choice",
+      "options": {
+        "1": "Black-African American",
+        "2": "Hispanic/Latino/Spanish descent",
+        "3": "Asian or South Asian",
+        "4": "Caucasian no Hispanic/Latino/Spanish descent",
+        "5": "Native American or Alaskan native",
+        "6": "Two or more of the above",
+        "7": "Other"
+      }
+    },
+    {
+      "id": "education",
+      "text": "What is the highest level of education you've completed?",
+      "type": "choice",
+      "options": {
+        "1": "High School",
+        "2": "Associate's Degree",
+        "3": "Bachelor's Degree",
+        "4": "Master's Degree",
+        "5": "Doctoral degree"
+      }
+    },
+    {
+      "id": "other_education",
+      "text": "Other education you have completed",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "household_income",
+      "text": "Your household income before taxes is?",
+      "type": "choice",
+      "options": {
+        "1": "Under $25,000",
+        "2": "$25,000 - $49,999",
+        "3": "$50,000 - $74,999",
+        "4": "$75,000 - $99,999",
+        "5": "$100,000 or more",
+        "6": "I prefer not to answer"
+      }
+    },
+    {
+      "id": "people_supported_by_income",
+      "text": "How many people are supported by this income?",
+      "type": "number"
+    }
+  ]
+}

@@ -7,7 +7,7 @@
     </x-slot>
 
     @php
-        $defaultTab = 'assessments';
+        $defaultTab = 'screenings';
         if ($errors->any()) {
             $defaultTab = 'upload';
         } elseif (session('admin_tab')) {
@@ -44,6 +44,17 @@
                 <nav class="-mb-px flex flex-wrap gap-2" aria-label="Admin sections">
                     <button
                         type="button"
+                        @click="tab = 'screenings'"
+                        :class="tab === 'screenings'
+                            ? 'border-indigo-500 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                        class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold"
+                    >
+                        Screenings
+                        <span class="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ $screeningParticipants->count() }}</span>
+                    </button>
+                    <button
+                        type="button"
                         @click="tab = 'completed'"
                         :class="tab === 'completed'
                             ? 'border-indigo-500 text-indigo-600'
@@ -75,6 +86,89 @@
                         Upload
                     </button>
                 </nav>
+            </div>
+
+            <div x-show="tab === 'screenings'" x-cloak class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 space-y-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 class="font-semibold text-lg text-gray-900">Participant Screenings</h3>
+                        <p class="mt-1 text-sm text-gray-600">
+                            Latest score on each assessment per participant. Downloads include every administration with scores and item responses.
+                        </p>
+                    </div>
+                    <a href="{{ route('admin.assessments.completed.download') }}" class="inline-flex justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+                        Download all participants (CSV)
+                    </a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500">
+                                <th class="py-2 pr-4">User ID</th>
+                                <th class="py-2 pr-4">Participant</th>
+                                <th class="py-2 pr-4">Latest scores</th>
+                                <th class="py-2 pr-4">Last completed</th>
+                                <th class="py-2 pr-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse ($screeningParticipants as $participant)
+                                @php
+                                    $latestByInstrument = $participant->assessmentResults
+                                        ->sortByDesc('administered_at')
+                                        ->unique('instrument_id')
+                                        ->sortBy(fn ($result) => $result->instrument->version ?: $result->instrument->name);
+                                    $lastCompleted = $participant->assessmentResults->max('administered_at');
+                                @endphp
+                                <tr>
+                                    <td class="py-2 pr-4 align-top font-mono font-semibold text-gray-900">{{ $participant->user_id }}</td>
+                                    <td class="py-2 pr-4 align-top">
+                                        <div class="font-medium text-gray-900">{{ $participant->user->name }}</div>
+                                        <div class="text-xs text-gray-500">{{ $participant->user->email }}</div>
+                                    </td>
+                                    <td class="py-2 pr-4 align-top">
+                                        @if ($latestByInstrument->isEmpty())
+                                            <span class="text-gray-500">No assessments completed</span>
+                                        @else
+                                            <dl class="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+                                                @foreach ($latestByInstrument as $result)
+                                                    @php $scoreDisplay = \App\Support\AttachmentQuadrantPresenter::compactScore($result); @endphp
+                                                    <div class="flex gap-2">
+                                                        <dt class="text-gray-500">{{ $result->instrument->version ?: $result->instrument->name }}:</dt>
+                                                        <dd class="text-gray-900">
+                                                            {{ $scoreDisplay['primary'] }}
+                                                            @if ($scoreDisplay['secondary'])
+                                                                <span class="text-xs text-gray-500">({{ $scoreDisplay['secondary'] }})</span>
+                                                            @endif
+                                                        </dd>
+                                                    </div>
+                                                @endforeach
+                                            </dl>
+                                        @endif
+                                    </td>
+                                    <td class="py-2 pr-4 align-top text-gray-600">{{ $lastCompleted ? $lastCompleted->format('M j, Y') : '—' }}</td>
+                                    <td class="py-2 pr-4 align-top">
+                                        <div class="flex flex-wrap gap-2">
+                                            <a href="{{ route('admin.participants.results', $participant) }}" class="inline-flex rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                                                View
+                                            </a>
+                                            @if ($latestByInstrument->isNotEmpty())
+                                                <a href="{{ route('admin.participants.results.download', $participant) }}" class="inline-flex rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">
+                                                    Download CSV
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="py-3 text-gray-500">No participants yet.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div x-show="tab === 'completed'" x-cloak class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 space-y-4">
@@ -171,7 +265,7 @@
                                                         @foreach ($itemResponses as $itemId => $value)
                                                             <div>
                                                                 <dt class="text-gray-700">{{ $itemsById[$itemId]['text'] ?? $itemId }}</dt>
-                                                                <dd class="text-gray-900">Response: {{ $value }}</dd>
+                                                                <dd class="text-gray-900">Response: {{ \App\Support\SurveyItem::displayValue($itemsById[$itemId] ?? null, $value, $result->instrument->scoring_config['response_labels'] ?? []) }}</dd>
                                                             </div>
                                                         @endforeach
                                                     </dl>
@@ -293,6 +387,25 @@
   "items": [
     {"id": "wb_1", "text": "Question one?"},
     {"id": "wb_2", "text": "Question two?"}
+  ]
+}</code></pre>
+                    <p class="text-sm text-gray-600">
+                        Questions use the shared <code>response_labels</code> scale unless they set a <code>type</code>:
+                        <code>"choice"</code> with their own <code>options</code>, <code>"number"</code> (whole number 0&ndash;999), or <code>"text"</code>.
+                        Only shared-scale questions count toward the score. Add <code>"required": false</code> to make a question optional.
+                        For a survey with no score (for example demographics), set <code>"method": "none"</code>; <code>response_labels</code> can then be omitted if no question uses the shared scale.
+                    </p>
+                    <pre class="overflow-auto rounded-md bg-gray-900 p-4 text-xs text-gray-100"><code>{
+  "slug": "demographics",
+  "name": "Demographic Survey",
+  "version": "Demographics",
+  "domain": "demographics",
+  "scoring_config": {"method": "none"},
+  "items": [
+    {"id": "gender", "text": "What is your gender?", "type": "choice",
+     "options": {"1": "Male", "2": "Female", "3": "Other"}},
+    {"id": "moves_before_18", "text": "How many times did you move before you were 18?", "type": "number"},
+    {"id": "first_language", "text": "If English is not your first language, what is it?", "type": "text", "required": false}
   ]
 }</code></pre>
                 </div>

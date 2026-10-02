@@ -6,6 +6,7 @@ use App\Enums\AdministrationType;
 use App\Http\Controllers\Controller;
 use App\Models\AssessmentResult;
 use App\Models\Instrument;
+use App\Support\SurveyItem;
 use Illuminate\View\View;
 
 class ParticipantDashboardController extends Controller
@@ -72,9 +73,10 @@ class ParticipantDashboardController extends Controller
     {
         $config = $instrument->scoring_config ?? [];
 
+        $hasSharedLabels = is_array($config['response_labels'] ?? null) && $config['response_labels'] !== [];
+
         return ! empty($instrument->items)
-            && is_array($config['response_labels'] ?? null)
-            && $config['response_labels'] !== [];
+            && ($hasSharedLabels || ! SurveyItem::usesSharedScale($instrument->items));
     }
 
     /**

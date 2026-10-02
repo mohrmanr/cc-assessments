@@ -7,6 +7,8 @@ use App\Models\AssessmentResult;
 use App\Models\Instrument;
 use App\Models\Participant;
 use App\Support\AttachmentQuadrantPresenter;
+use App\Support\SurveyItem;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -26,8 +28,13 @@ class AssessmentUploadController extends Controller
             ->latest('administered_at')
             ->limit(100)
             ->get();
+        $screeningParticipants = Participant::query()
+            ->with(['user', 'assessmentResults.instrument'])
+            ->get()
+            ->sortBy(fn (Participant $participant): string => strtolower($participant->user->name))
+            ->values();
 
-        return view('dashboards.admin', compact('instruments', 'completedAssessments'));
+        return view('dashboards.admin', compact('instruments', 'completedAssessments', 'screeningParticipants'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -54,10 +61,26 @@ class AssessmentUploadController extends Controller
 
         $slug = Str::slug($definition['slug']);
         $items = collect($definition['items'])
-            ->map(fn (array $item): array => [
-                'id' => Str::snake($item['id']),
-                'text' => trim($item['text']),
-            ])
+            ->map(function (array $item): array {
+                $normalized = [
+                    'id' => Str::snake($item['id']),
+                    'text' => trim($item['text']),
+                ];
+                $type = SurveyItem::type($item);
+                if ($type !== 'scale') {
+                    $normalized['type'] = $type;
+                }
+                if ($type === 'choice') {
+                    $normalized['options'] = collect($item['options'])
+                        ->mapWithKeys(fn (string $label, int|string $code): array => [(string) $code => trim($label)])
+                        ->all();
+                }
+                if (! SurveyItem::isRequired($item)) {
+                    $normalized['required'] = false;
+                }
+
+                return $normalized;
+            })
             ->values()
             ->all();
 
@@ -65,7 +88,7 @@ class AssessmentUploadController extends Controller
             'method' => Arr::get($definition, 'scoring_config.method', 'sum'),
             'threshold' => Arr::get($definition, 'scoring_config.threshold'),
             'direction' => Arr::get($definition, 'scoring_config.direction', 'above'),
-            'response_labels' => $definition['response_labels'],
+            'response_labels' => $definition['response_labels'] ?? [],
             'score_max' => Arr::get($definition, 'scoring_config.score_max'),
             'description' => Arr::get($definition, 'description', "Complete the {$definition['name']} assessment."),
             'instructions' => Arr::get($definition, 'instructions', 'Select one answer per question.'),
@@ -93,9 +116,23 @@ class AssessmentUploadController extends Controller
 
     public function downloadCompleted(): StreamedResponse
     {
-        $filename = 'completed-assessments-'.now()->format('Ymd-His').'.csv';
+        return $this->streamResults(
+            AssessmentResult::query(),
+            'completed-assessments-'.now()->format('Ymd-His').'.csv'
+        );
+    }
 
-        return response()->streamDownload(function (): void {
+    public function downloadParticipantResults(Participant $participant): StreamedResponse
+    {
+        return $this->streamResults(
+            AssessmentResult::query()->where('participant_id', $participant->id),
+            "screenings-user-{$participant->user_id}-".now()->format('Ymd-His').'.csv'
+        );
+    }
+
+    protected function streamResults(Builder $query, string $filename): StreamedResponse
+    {
+        return response()->streamDownload(function () use ($query): void {
             $handle = fopen('php://output', 'w');
 
             fputcsv($handle, [
@@ -109,15 +146,18 @@ class AssessmentUploadController extends Controller
                 'instrument_version',
                 'administration_type',
                 'total_score',
+                'score_detail',
+                'threshold',
                 'threshold_met',
                 'primary_clinician_name',
                 'primary_clinician_email',
                 'administered_at',
+                'subscale_scores_json',
                 'reference_fields_json',
                 'item_responses_json',
             ]);
 
-            AssessmentResult::query()
+            $query
                 ->with(['participant.user', 'instrument', 'primaryClinician'])
                 ->orderBy('administered_at')
                 ->chunkById(100, function ($results) use ($handle): void {
@@ -125,6 +165,7 @@ class AssessmentUploadController extends Controller
                         $responses = $result->item_responses ?? [];
                         $fields = $responses['fields'] ?? [];
                         $items = $responses['items'] ?? $responses;
+                        $score = AttachmentQuadrantPresenter::compactScore($result);
 
                         fputcsv($handle, [
                             $result->id,
@@ -137,10 +178,15 @@ class AssessmentUploadController extends Controller
                             $result->instrument->version,
                             $result->administration_type->value,
                             $result->total_score,
+                            $result->total_score === null && ! $score['is_attachment']
+                                ? ''
+                                : trim($score['primary'].' '.($score['secondary'] ?? '')),
+                            $result->instrument->scoring_config['threshold'] ?? null,
                             $result->threshold_met ? 'yes' : 'no',
                             $result->primaryClinician?->name,
                             $result->primaryClinician?->email,
                             $result->administered_at?->toIso8601String(),
+                            json_encode($result->subscale_scores ?? [], JSON_THROW_ON_ERROR),
                             json_encode($fields, JSON_THROW_ON_ERROR),
                             json_encode($items, JSON_THROW_ON_ERROR),
                         ]);
@@ -235,23 +281,29 @@ class AssessmentUploadController extends Controller
                     $errors[] = 'Item ids and text cannot be blank.';
                     break;
                 }
-            }
-        }
-
-        if (! is_array($definition['response_labels'] ?? null) || count($definition['response_labels']) === 0) {
-            $errors[] = 'Provide response_labels, for example {"0": "No", "1": "Yes"}.';
-        } else {
-            foreach ($definition['response_labels'] as $value => $label) {
-                if (! is_numeric($value) || ! is_string($label) || trim($label) === '') {
-                    $errors[] = 'response_labels must map numeric values to non-empty labels.';
-                    break;
+                $label = "Item '{$item['id']}'";
+                if (array_key_exists('type', $item) && ! in_array($item['type'], SurveyItem::TYPES, true)) {
+                    $errors[] = "{$label}: type must be one of ".implode(', ', SurveyItem::TYPES).'.';
+                }
+                if (($item['type'] ?? null) === 'choice' && ! $this->isValidLabelMap($item['options'] ?? null)) {
+                    $errors[] = "{$label}: choice items need options mapping numeric codes to labels, for example {\"1\": \"Yes\", \"0\": \"No\"}.";
+                }
+                if (array_key_exists('required', $item) && ! is_bool($item['required'])) {
+                    $errors[] = "{$label}: required must be true or false.";
                 }
             }
         }
 
+        $items = is_array($definition['items'] ?? null) ? array_filter($definition['items'], 'is_array') : [];
+        if (array_key_exists('response_labels', $definition) || SurveyItem::usesSharedScale($items)) {
+            if (! $this->isValidLabelMap($definition['response_labels'] ?? null)) {
+                $errors[] = 'Provide response_labels mapping numeric values to non-empty labels, for example {"0": "No", "1": "Yes"}. They are required when any item uses the shared scale (no type, or type "scale").';
+            }
+        }
+
         $method = Arr::get($definition, 'scoring_config.method', 'sum');
-        if (! in_array($method, ['sum', 'mean_x100'], true)) {
-            $errors[] = "scoring_config.method must be 'sum' or 'mean_x100'.";
+        if (! in_array($method, ['sum', 'mean_x100', 'none'], true)) {
+            $errors[] = "scoring_config.method must be 'sum', 'mean_x100', or 'none' (not scored).";
         }
 
         $direction = Arr::get($definition, 'scoring_config.direction', 'above');
@@ -260,5 +312,20 @@ class AssessmentUploadController extends Controller
         }
 
         return $errors;
+    }
+
+    protected function isValidLabelMap(mixed $labels): bool
+    {
+        if (! is_array($labels) || $labels === []) {
+            return false;
+        }
+
+        foreach ($labels as $value => $label) {
+            if (! is_numeric($value) || ! is_string($label) || trim($label) === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

@@ -36,7 +36,7 @@ class AssessmentCompletedNotification extends Notification
             ->greeting('Assessment completed')
             ->line("Participant: {$participant->name} ({$participant->email})")
             ->line("Assessment: {$instrument->name}")
-            ->line("Score: {$this->result->total_score}")
+            ->line('Score: '.($this->result->total_score ?? 'Not scored'))
             ->line('Threshold met: '.($this->result->threshold_met ? 'Yes' : 'No'))
             ->line('Primary clinician: '.($clinician?->name ?? 'Unassigned'))
             ->action('Open admin dashboard', route('admin.dashboard'));

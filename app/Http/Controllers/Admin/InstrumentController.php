@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Instrument;
+use App\Support\SurveyItem;
 use App\Support\SurveyScaleConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -86,6 +88,9 @@ class InstrumentController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9_]+$/'],
             'items.*.text' => ['required', 'string', 'max:2000'],
+            'items.*.type' => ['nullable', Rule::in(SurveyItem::TYPES)],
+            'items.*.options' => ['nullable', 'string', 'max:5000'],
+            'items.*.required' => ['sometimes', 'boolean'],
         ];
 
         $answerType = $request->input('answer_type', 'custom');
@@ -130,10 +135,16 @@ class InstrumentController extends Controller
                 ->withInput();
         }
 
-        $items = collect($validated['items'])
-            ->map(fn (array $item): array => $this->normalizeItem($item, $itemAttributes))
-            ->values()
-            ->all();
+        try {
+            $items = collect($validated['items'])
+                ->map(fn (array $item): array => $this->normalizeItem($item, $itemAttributes))
+                ->values()
+                ->all();
+        } catch (\InvalidArgumentException $exception) {
+            return back()
+                ->withErrors(['items' => $exception->getMessage()])
+                ->withInput();
+        }
 
         if ($answerType === 'custom') {
             $responseLabels = collect($validated['response_labels'])
@@ -481,6 +492,22 @@ class InstrumentController extends Controller
             'id' => $this->sanitizeItemIdComponent((string) ($item['id'] ?? '')),
             'text' => trim((string) ($item['text'] ?? '')),
         ];
+
+        $type = SurveyItem::type($item);
+        if ($type !== 'scale') {
+            $normalized['type'] = $type;
+        }
+        if ($type === 'choice') {
+            $options = $item['options'] ?? [];
+            try {
+                $normalized['options'] = is_string($options) ? SurveyItem::parseOptionsText($options) : $options;
+            } catch (\InvalidArgumentException $exception) {
+                throw new \InvalidArgumentException("Question '{$normalized['id']}': {$exception->getMessage()}");
+            }
+        }
+        if (! SurveyItem::isRequired($item)) {
+            $normalized['required'] = false;
+        }
 
         foreach ($itemAttributes as $attribute) {
             $key = $attribute['key'];

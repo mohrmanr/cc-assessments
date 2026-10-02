@@ -10,12 +10,17 @@
                     <div>
                         <h3 class="font-semibold text-lg text-gray-900">Assessment Score History</h3>
                         <p class="mt-1 text-sm text-gray-600">
-                            {{ $participant->user->email }} - baseline through one-year development data.
+                            User ID {{ $participant->user_id }} · {{ $participant->user->email }} - baseline through one-year development data.
                         </p>
                     </div>
-                    <a href="{{ route('admin.dashboard') }}" class="inline-flex justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
-                        Back to admin
-                    </a>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ route('admin.participants.results.download', $participant) }}" class="inline-flex justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+                            Download CSV
+                        </a>
+                        <a href="{{ route('admin.dashboard') }}" class="inline-flex justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                            Back to admin
+                        </a>
+                    </div>
                 </div>
                 @if (session('status'))
                     <div class="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">

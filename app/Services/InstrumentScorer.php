@@ -25,7 +25,7 @@ class InstrumentScorer
 
     /**
      * @param  array<string, int>  $itemResponses
-     * @return array{total: float, threshold_met: bool, threshold: float|int|null, subscale_scores?: array<string, mixed>}
+     * @return array{total: float|null, threshold_met: bool, threshold: float|int|null, subscale_scores?: array<string, mixed>}
      */
     public function score(Instrument $instrument, array $itemResponses): array
     {
@@ -35,6 +35,14 @@ class InstrumentScorer
 
         $config = $instrument->scoring_config ?? [];
         $method = $config['method'] ?? 'sum';
+
+        if ($method === 'none') {
+            return [
+                'total' => null,
+                'threshold_met' => false,
+                'threshold' => null,
+            ];
+        }
 
         if ($method === 'attachment_targets') {
             return $this->scoreAttachmentTargets($instrument, $itemResponses);

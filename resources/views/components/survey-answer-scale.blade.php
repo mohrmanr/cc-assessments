@@ -3,6 +3,7 @@
     'labels' => [],
     'default' => null,
     'wide' => null,
+    'required' => true,
 ])
 
 @php
@@ -24,7 +25,7 @@
                     name="{{ $name }}"
                     value="{{ $value }}"
                     @checked((string) $selected === (string) $value)
-                    required
+                    @required($required)
                 >
                 <span>{{ $label }}</span>
             </label>

@@ -11,6 +11,7 @@ use App\Notifications\AssessmentCompletedNotification;
 use App\Services\InstrumentScorer;
 use App\Services\TreatmentRecommendationService;
 use App\Support\AttachmentSurvey;
+use App\Support\SurveyItem;
 use App\Support\SurveyScaleConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -109,7 +110,6 @@ class AssessmentController extends Controller
         $itemIds = collect($items)->pluck('id')->all();
         $fields = $survey['fields'] ?? [];
         $usesContinuousScale = SurveyScaleConfig::usesContinuousScale($survey, $instrument->scoring_config ?? []);
-        $allowedValues = array_map('intval', array_keys($labels));
 
         $rules = [];
         foreach ($fields as $field) {
@@ -122,24 +122,40 @@ class AssessmentController extends Controller
             }
             $rules[$field['id']] = $fieldRules;
         }
-        foreach ($itemIds as $id) {
-            if ($usesContinuousScale) {
+        foreach ($items as $item) {
+            $id = $item['id'];
+            $type = SurveyItem::type($item);
+            $presence = SurveyItem::isRequired($item) ? 'required' : 'nullable';
+
+            if ($type === 'text') {
+                $rules[$id] = [$presence, 'string', 'max:'.SurveyItem::TEXT_MAX];
+            } elseif ($type === 'number') {
+                $rules[$id] = [$presence, 'integer', 'min:0', 'max:'.SurveyItem::NUMBER_MAX];
+            } elseif ($type === 'scale' && $usesContinuousScale) {
                 $scale = SurveyScaleConfig::resolve($instrument->scoring_config ?? [], $survey);
-                $min = $scale['min'];
-                $max = $scale['max'];
-                $rules[$id] = ['required', 'integer', 'min:'.$min, 'max:'.$max];
+                $rules[$id] = [$presence, 'integer', 'min:'.$scale['min'], 'max:'.$scale['max']];
             } else {
-                $rules[$id] = ['required', 'integer', Rule::in($allowedValues)];
+                $allowedValues = array_map('intval', array_keys(SurveyItem::choices($item, $labels)));
+                $rules[$id] = [$presence, 'integer', Rule::in($allowedValues)];
             }
         }
         $validated = $request->validate($rules);
         $itemResponses = [];
-        foreach ($itemIds as $id) {
-            $itemResponses[$id] = (int) $validated[$id];
+        $scoredResponses = [];
+        foreach ($items as $item) {
+            $id = $item['id'];
+            $value = $validated[$id] ?? null;
+            if (SurveyItem::type($item) !== 'text' && $value !== null) {
+                $value = (int) $value;
+            }
+            $itemResponses[$id] = $value;
+            if (SurveyItem::type($item) === 'scale' && $value !== null) {
+                $scoredResponses[$id] = $value;
+            }
         }
         $fieldResponses = array_diff_key($validated, array_flip($itemIds));
 
-        $score = $scorer->score($instrument, $itemResponses);
+        $score = $scorer->score($instrument, $scoredResponses);
 
         $result = AssessmentResult::query()->create([
             'participant_id' => $participant->id,
@@ -190,7 +206,10 @@ class AssessmentController extends Controller
         $scoringConfig = $instrument->scoring_config ?? [];
         $labels = $scoringConfig['response_labels'] ?? null;
 
-        abort_if(! is_array($labels) || $labels === [], 404);
+        abort_if(
+            (! is_array($labels) || $labels === []) && SurveyItem::usesSharedScale($instrument->items ?? []),
+            404
+        );
 
         return [
             'route_name' => 'participant.assessments.show',

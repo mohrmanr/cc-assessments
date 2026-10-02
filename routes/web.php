@@ -68,6 +68,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
         ->name('admin.assessments.completed.download');
     Route::get('/admin/participants/{participant}/results', [AssessmentUploadController::class, 'participantResults'])
         ->name('admin.participants.results');
+    Route::get('/admin/participants/{participant}/results/download', [AssessmentUploadController::class, 'downloadParticipantResults'])
+        ->name('admin.participants.results.download');
     Route::post('/admin/assessment-results/{result}/reset', [AssessmentUploadController::class, 'resetResult'])
         ->name('admin.assessment-results.reset');
     Route::get('/admin/instruments/{instrument}/edit', [InstrumentController::class, 'edit'])
@@ -79,7 +81,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('/admin/instruments/{instrument}/questions/template.csv', [InstrumentController::class, 'downloadQuestionsTemplate'])
         ->name('admin.instruments.questions.template');
     Route::get('/admin/users', [UserAdminController::class, 'index'])->name('admin.users.index');
-    Route::post('/admin/users', [UserAdminController::class, 'store'])->name('admin.users.store');
+    Route::get('/admin/users/download', [UserAdminController::class, 'download'])->name('admin.users.download');    Route::post('/admin/users', [UserAdminController::class, 'store'])->name('admin.users.store');
     Route::post('/admin/users/{user}/roles', [UserAdminController::class, 'updateRoles'])->name('admin.users.roles');
     Route::post('/admin/users/{user}/courses', [UserAdminController::class, 'grantCourse'])->name('admin.users.courses');
     Route::post('/admin/users/{user}/posttest-reset', [UserAdminController::class, 'resetPosttest'])->name('admin.users.posttest-reset');
