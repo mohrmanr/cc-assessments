@@ -10,6 +10,7 @@ use App\Services\CourseWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -134,6 +135,22 @@ class UserAdminController extends Controller
         $workflow->resetPosttest($user, $course);
 
         return redirect()->route('admin.users.index')->with('status', "Reset posttest for {$user->name} on {$course->title}.");
+    }
+
+    public function resetPassword(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user->forceFill([
+            'password' => Hash::make($validated['password']),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('status', "Password reset for {$user->name} ({$user->email}). Share the new password with them privately.");
     }
 
     public function destroy(User $user): RedirectResponse

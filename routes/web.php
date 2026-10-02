@@ -85,6 +85,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::post('/admin/users/{user}/roles', [UserAdminController::class, 'updateRoles'])->name('admin.users.roles');
     Route::post('/admin/users/{user}/courses', [UserAdminController::class, 'grantCourse'])->name('admin.users.courses');
     Route::post('/admin/users/{user}/posttest-reset', [UserAdminController::class, 'resetPosttest'])->name('admin.users.posttest-reset');
+    Route::put('/admin/users/{user}/password', [UserAdminController::class, 'resetPassword'])->name('admin.users.password');
     Route::delete('/admin/users/{user}', [UserAdminController::class, 'destroy'])->name('admin.users.destroy');
 });
 

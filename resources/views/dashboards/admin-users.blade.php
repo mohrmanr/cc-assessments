@@ -108,7 +108,17 @@
                                         <button type="submit" class="rounded-md border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">Reset posttest</button>
                                     </form>
                                 </td>
-                                <td class="px-4 py-4 align-top">
+                                <td class="px-4 py-4 align-top space-y-3">
+                                    <details>
+                                        <summary class="cursor-pointer text-xs font-semibold text-indigo-700 hover:text-indigo-600">Reset password</summary>
+                                        <form method="POST" action="{{ route('admin.users.password', $user) }}" class="mt-2 space-y-2" onsubmit="return confirm('Set a new password for {{ $user->name }}?')">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="password" name="password" required minlength="8" autocomplete="new-password" placeholder="New password (8+ characters)" class="block w-48 rounded-md border-gray-300 text-xs">
+                                            <input type="password" name="password_confirmation" required minlength="8" autocomplete="new-password" placeholder="Confirm new password" class="block w-48 rounded-md border-gray-300 text-xs">
+                                            <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-500">Save new password</button>
+                                        </form>
+                                    </details>
                                     @if ($user->id === auth()->id())
                                         <p class="text-xs text-gray-500">Current account</p>
                                     @else
