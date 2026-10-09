@@ -6,6 +6,7 @@ use App\Enums\AdministrationType;
 use App\Http\Controllers\Controller;
 use App\Models\AssessmentResult;
 use App\Models\Instrument;
+use App\Models\Participant;
 use App\Models\User;
 use App\Notifications\AssessmentCompletedNotification;
 use App\Services\InstrumentScorer;
@@ -51,14 +52,61 @@ class AssessmentController extends Controller
         return $this->storeBaselineSurvey($request, $scorer, $recommendations, 'ace');
     }
 
-    public function showDesIi(): View|RedirectResponse
+    public function staffIndex(): View
     {
-        return $this->showBaselineSurvey('des-ii');
+        $instruments = Instrument::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (Instrument $instrument): bool => $instrument->isStaffAdministered())
+            ->values();
+
+        $participants = Participant::query()
+            ->with(['user', 'assessmentResults' => fn ($query) => $query
+                ->whereIn('instrument_id', $instruments->pluck('id'))
+                ->where('administration_type', AdministrationType::Baseline)
+                ->with('enteredBy')])
+            ->get()
+            ->sortBy(fn (Participant $participant): string => strtolower($participant->user->name))
+            ->values();
+
+        return view('staff.interviews', compact('instruments', 'participants'));
     }
 
-    public function storeDesIi(Request $request, InstrumentScorer $scorer, TreatmentRecommendationService $recommendations): RedirectResponse
+    public function staffShow(Instrument $instrument, Participant $participant): View|RedirectResponse
     {
-        return $this->storeBaselineSurvey($request, $scorer, $recommendations, 'des-ii');
+        abort_unless($instrument->isStaffAdministered() && $instrument->is_active, 404);
+
+        $existing = $this->baselineResult($participant, $instrument);
+        if ($existing) {
+            return redirect()
+                ->route('staff.interviews.index')
+                ->withErrors(['interview' => "{$instrument->name} was already entered for {$participant->user->name} on {$existing->administered_at->format('M j, Y')}. Ask an admin to reset it if it needs to be re-entered."]);
+        }
+
+        $view = $this->surveyView($instrument);
+        $view['survey']['store_route_name'] = 'staff.interviews.store';
+        $view['survey']['route_params'] = ['instrument' => $instrument, 'participant' => $participant];
+        $view['enteringFor'] = $participant->loadMissing('user');
+
+        return view('assessments.survey', $view);
+    }
+
+    public function staffStore(Request $request, Instrument $instrument, Participant $participant, InstrumentScorer $scorer, TreatmentRecommendationService $recommendations): RedirectResponse
+    {
+        abort_unless($instrument->isStaffAdministered() && $instrument->is_active, 404);
+
+        if ($this->baselineResult($participant, $instrument)) {
+            return redirect()
+                ->route('staff.interviews.index')
+                ->withErrors(['interview' => "{$instrument->name} was already entered for {$participant->user->name}. Nothing was saved."]);
+        }
+
+        $this->recordSurvey($request, $scorer, $recommendations, $participant, $instrument, $request->user());
+
+        return redirect()
+            ->route('staff.interviews.index')
+            ->with('status', "Saved {$instrument->name} for {$participant->user->name} (User ID {$participant->user_id}).");
     }
 
     protected function showBaselineSurvey(string $slug): View|RedirectResponse
@@ -69,23 +117,29 @@ class AssessmentController extends Controller
             abort(403);
         }
 
-        $survey = $this->baselineSurvey($slug);
         $instrument = Instrument::query()->where('slug', $slug)->firstOrFail();
-        [$items, $labels] = $this->resolveSurveyContent($instrument, $survey);
+        abort_if($instrument->isStaffAdministered(), 404);
 
-        $existing = AssessmentResult::query()
-            ->where('participant_id', $participant->id)
-            ->where('instrument_id', $instrument->id)
-            ->where('administration_type', AdministrationType::Baseline)
-            ->exists();
+        if ($this->baselineResult($participant, $instrument)) {
+            $label = $this->baselineSurvey($slug)['label'];
 
-        if ($existing) {
             return redirect()
                 ->route('participant.dashboard')
-                ->with('status', "You have already completed the baseline {$survey['label']}.");
+                ->with('status', "You have already completed the baseline {$label}.");
         }
 
-        return view('assessments.survey', [
+        return view('assessments.survey', $this->surveyView($instrument));
+    }
+
+    /**
+     * @return array{survey: array<string, mixed>, instrument: Instrument, items: array<int, array<string, mixed>>, labels: array<int|string, string>}
+     */
+    protected function surveyView(Instrument $instrument): array
+    {
+        $survey = $this->baselineSurvey($instrument->slug);
+        [$items, $labels] = $this->resolveSurveyContent($instrument, $survey);
+
+        return [
             'survey' => $this->withSurveyRouteParams(
                 $this->mergeInstrumentSurveyCopy($survey, $instrument),
                 $instrument
@@ -93,7 +147,16 @@ class AssessmentController extends Controller
             'instrument' => $instrument,
             'items' => $items,
             'labels' => $labels,
-        ]);
+        ];
+    }
+
+    protected function baselineResult(Participant $participant, Instrument $instrument): ?AssessmentResult
+    {
+        return AssessmentResult::query()
+            ->where('participant_id', $participant->id)
+            ->where('instrument_id', $instrument->id)
+            ->where('administration_type', AdministrationType::Baseline)
+            ->first();
     }
 
     protected function storeBaselineSurvey(Request $request, InstrumentScorer $scorer, TreatmentRecommendationService $recommendations, string $slug): RedirectResponse
@@ -105,6 +168,28 @@ class AssessmentController extends Controller
         }
 
         $instrument = Instrument::query()->where('slug', $slug)->firstOrFail();
+        abort_if($instrument->isStaffAdministered(), 404);
+
+        $survey = $this->recordSurvey($request, $scorer, $recommendations, $participant, $instrument, null);
+
+        $completionMessage = $instrument->scoring_config['completion_message'] ?? null;
+        $message = filled($completionMessage)
+            ? trim((string) $completionMessage)
+            : "Thank you for completing the {$survey['label']} survey. Your responses have been recorded for your care team.";
+
+        return redirect()
+            ->route('participant.dashboard')
+            ->with('status', $message);
+    }
+
+    /**
+     * Validate, score, and save one baseline administration. Returns the merged survey config.
+     *
+     * @return array<string, mixed>
+     */
+    protected function recordSurvey(Request $request, InstrumentScorer $scorer, TreatmentRecommendationService $recommendations, Participant $participant, Instrument $instrument, ?User $enteredBy): array
+    {
+        $slug = $instrument->slug;
         $survey = $this->mergeInstrumentSurveyCopy($this->baselineSurvey($slug), $instrument);
         [$items, $labels] = $this->resolveSurveyContent($instrument, $survey);
         $itemIds = collect($items)->pluck('id')->all();
@@ -169,22 +254,16 @@ class AssessmentController extends Controller
             'subscale_scores' => $score['subscale_scores'] ?? null,
             'treatment_track_id' => $participant->treatment_track_id,
             'primary_clinician_id' => $participant->primary_clinician_id,
+            'entered_by_user_id' => $enteredBy?->id,
             'threshold_met' => $score['threshold_met'],
             'threshold_flags' => $score['threshold_met'] ? [$instrument->slug => true] : [],
             'administered_at' => now(),
         ]);
 
-        $recommendation = $recommendations->maybeCreateFromResult($result);
+        $recommendations->maybeCreateFromResult($result);
         $this->notifyAdmins($result);
 
-        $completionMessage = $instrument->scoring_config['completion_message'] ?? null;
-        $message = filled($completionMessage)
-            ? trim((string) $completionMessage)
-            : "Thank you for completing the {$survey['label']} survey. Your responses have been recorded for your care team.";
-
-        return redirect()
-            ->route('participant.dashboard')
-            ->with('status', $message);
+        return $survey;
     }
 
     /**

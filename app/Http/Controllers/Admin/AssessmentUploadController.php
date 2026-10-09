@@ -95,6 +95,7 @@ class AssessmentUploadController extends Controller
             'intro' => Arr::get($definition, 'intro', []),
             'closing' => Arr::get($definition, 'closing'),
             'fields' => Arr::get($definition, 'fields', []),
+            'administered_by' => Arr::get($definition, 'administered_by', 'participant'),
         ];
 
         Instrument::query()->updateOrCreate(
@@ -155,10 +156,11 @@ class AssessmentUploadController extends Controller
                 'subscale_scores_json',
                 'reference_fields_json',
                 'item_responses_json',
+                'entered_by',
             ]);
 
             $query
-                ->with(['participant.user', 'instrument', 'primaryClinician'])
+                ->with(['participant.user', 'instrument', 'primaryClinician', 'enteredBy'])
                 ->orderBy('administered_at')
                 ->chunkById(100, function ($results) use ($handle): void {
                     foreach ($results as $result) {
@@ -189,6 +191,7 @@ class AssessmentUploadController extends Controller
                             json_encode($result->subscale_scores ?? [], JSON_THROW_ON_ERROR),
                             json_encode($fields, JSON_THROW_ON_ERROR),
                             json_encode($items, JSON_THROW_ON_ERROR),
+                            $result->enteredBy?->name,
                         ]);
                     }
                 });
@@ -304,6 +307,10 @@ class AssessmentUploadController extends Controller
         $method = Arr::get($definition, 'scoring_config.method', 'sum');
         if (! in_array($method, ['sum', 'mean_x100', 'none'], true)) {
             $errors[] = "scoring_config.method must be 'sum', 'mean_x100', or 'none' (not scored).";
+        }
+
+        if (! in_array(Arr::get($definition, 'administered_by', 'participant'), ['participant', 'staff'], true)) {
+            $errors[] = "administered_by must be 'participant' or 'staff' (staff interview).";
         }
 
         $direction = Arr::get($definition, 'scoring_config.direction', 'above');

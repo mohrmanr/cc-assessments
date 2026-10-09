@@ -26,6 +26,7 @@ class ParticipantDashboardController extends Controller
             ->keys()
             ->merge($dynamicSlugs)
             ->unique()
+            ->reject(fn (string $slug): bool => (bool) $instruments->get($slug)?->isStaffAdministered())
             ->values();
 
         $baselineResults = collect();

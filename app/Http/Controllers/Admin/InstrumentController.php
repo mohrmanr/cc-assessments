@@ -61,6 +61,7 @@ class InstrumentController extends Controller
             'completionMessage' => $scoringConfig['completion_message']
                 ?? 'Thank you for completing this survey. Your responses have been recorded for your care team.',
             'referenceFields' => $this->resolveReferenceFields($instrument, is_array($surveyConfig) ? $surveyConfig : []),
+            'administeredBy' => $scoringConfig['administered_by'] ?? 'participant',
         ]);
     }
 
@@ -79,6 +80,7 @@ class InstrumentController extends Controller
             'submit_hint' => ['nullable', 'string', 'max:500'],
             'completion_message' => ['nullable', 'string', 'max:2000'],
             'is_active' => ['sometimes', 'boolean'],
+            'administered_by' => ['sometimes', 'in:participant,staff'],
             'answer_type' => ['required', 'in:custom,buckets,slider'],
             'reference_fields' => ['nullable', 'array'],
             'reference_fields.*.id' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9_]*$/'],
@@ -208,6 +210,9 @@ class InstrumentController extends Controller
         $scoringConfig['completion_message'] = trim($validated['completion_message'] ?? '');
         $scoringConfig['fields'] = $this->normalizeReferenceFields($validated['reference_fields'] ?? []);
         $scoringConfig['item_attributes'] = $itemAttributes;
+        if (isset($validated['administered_by'])) {
+            $scoringConfig['administered_by'] = $validated['administered_by'];
+        }
 
         $instrument->update([
             'items' => $items,

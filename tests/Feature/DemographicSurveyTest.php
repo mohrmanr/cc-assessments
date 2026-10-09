@@ -72,27 +72,49 @@ class DemographicSurveyTest extends TestCase
         $this->assertSame(['1' => 'Male', '2' => 'Female', '3' => 'Other'], $instrument->items[0]['options']);
         $this->assertFalse($instrument->items[2]['required']);
 
+        $this->assertTrue($instrument->isStaffAdministered());
+        $participantProfile = $this->participant->participantProfile;
+        $clinician = User::query()->where('email', 'clinician@connectionscounseling.test')->firstOrFail();
+
         $this->actingAs($this->participant)->get(route('participant.dashboard'))
             ->assertOk()
-            ->assertSee('Demographics');
+            ->assertDontSee('Demographics');
+        $this->actingAs($this->participant)->get(route('participant.assessments.show', $instrument))->assertNotFound();
+        $this->actingAs($this->participant)
+            ->post(route('participant.assessments.store', $instrument), $this->validAnswers())
+            ->assertNotFound();
+        $this->actingAs($this->participant)->get(route('staff.interviews.index'))->assertForbidden();
 
-        $this->actingAs($this->participant)->get(route('participant.assessments.show', $instrument))
+        $this->actingAs($clinician)->get(route('staff.interviews.index'))
             ->assertOk()
+            ->assertSee($this->participant->name)
+            ->assertSee(route('staff.interviews.show', [$instrument, $participantProfile]), false);
+
+        $this->actingAs($clinician)->get(route('staff.interviews.show', [$instrument, $participantProfile]))
+            ->assertOk()
+            ->assertSee('Staff entry')
             ->assertSee('What is your gender?')
             ->assertSee('(optional)')
-            ->assertSee('I prefer not to answer');
+            ->assertSee('I prefer not to answer')
+            ->assertSee(route('staff.interviews.store', [$instrument, $participantProfile]), false);
 
-        $this->actingAs($this->participant)
-            ->post(route('participant.assessments.store', $instrument), ['gender' => '9'])
+        $this->actingAs($clinician)
+            ->post(route('staff.interviews.store', [$instrument, $participantProfile]), ['gender' => '9'])
             ->assertSessionHasErrors(['gender', 'moves_before_18', 'household_income'])
             ->assertSessionDoesntHaveErrors(['first_language', 'siblings_comment']);
 
-        $this->actingAs($this->participant)
-            ->post(route('participant.assessments.store', $instrument), $this->validAnswers())
+        $this->actingAs($clinician)
+            ->post(route('staff.interviews.store', [$instrument, $participantProfile]), $this->validAnswers())
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('participant.dashboard'));
+            ->assertRedirect(route('staff.interviews.index'));
+
+        $this->actingAs($clinician)
+            ->post(route('staff.interviews.store', [$instrument, $participantProfile]), $this->validAnswers())
+            ->assertSessionHasErrors('interview');
 
         $result = AssessmentResult::query()->where('instrument_id', $instrument->id)->sole();
+        $this->assertSame($participantProfile->id, $result->participant_id);
+        $this->assertSame($clinician->id, $result->entered_by_user_id);
         $this->assertNull($result->total_score);
         $this->assertFalse($result->threshold_met);
         $this->assertSame(2, $result->item_responses['items']['gender']);
@@ -105,6 +127,12 @@ class DemographicSurveyTest extends TestCase
         $this->assertNotNull($row);
         $this->assertStringContainsString('""gender"":2', $row);
         $this->assertStringContainsString('""first_language"":""Spanish""', $row);
+        $this->assertStringContainsString($clinician->name, $row);
+
+        $this->actingAs($this->admin)->get(route('staff.interviews.index'))
+            ->assertOk()
+            ->assertSee('Entered')
+            ->assertSee('by '.$clinician->name);
 
         $this->actingAs($this->admin)->get(route('admin.dashboard'))
             ->assertOk()
@@ -142,6 +170,7 @@ class DemographicSurveyTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $instrument->refresh();
+        $this->assertTrue($instrument->isStaffAdministered());
         $this->assertSame(['1' => 'Man', '2' => 'Woman', '3' => 'Other'], $instrument->items[0]['options']);
         $this->assertSame('number', $instrument->items[4]['type']);
         $this->assertFalse($instrument->items[2]['required']);

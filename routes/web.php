@@ -49,8 +49,6 @@ Route::middleware(['auth', 'verified', 'role:participant'])->group(function () {
     Route::post('/participant/assessments/pcl5', [AssessmentController::class, 'storePcl5'])->name('participant.assessments.pcl5.store');
     Route::get('/participant/assessments/ace', [AssessmentController::class, 'showAce'])->name('participant.assessments.ace');
     Route::post('/participant/assessments/ace', [AssessmentController::class, 'storeAce'])->name('participant.assessments.ace.store');
-    Route::get('/participant/assessments/des-ii', [AssessmentController::class, 'showDesIi'])->name('participant.assessments.des-ii');
-    Route::post('/participant/assessments/des-ii', [AssessmentController::class, 'storeDesIi'])->name('participant.assessments.des-ii.store');
     Route::get('/participant/assessments/{instrument:slug}', [AssessmentController::class, 'show'])->name('participant.assessments.show');
     Route::post('/participant/assessments/{instrument:slug}', [AssessmentController::class, 'store'])->name('participant.assessments.store');
 });
@@ -59,6 +57,12 @@ Route::middleware(['auth', 'verified', 'role:clinician'])->group(function () {
     Route::get('/clinician', [CaseloadController::class, 'index'])->name('clinician.dashboard');
     Route::post('/clinician/recommendations/{recommendation}/confirm', [CaseloadController::class, 'confirmRecommendation'])
         ->name('clinician.recommendations.confirm');
+});
+
+Route::middleware(['auth', 'verified', 'role:clinician,admin'])->group(function () {
+    Route::get('/staff/interviews', [AssessmentController::class, 'staffIndex'])->name('staff.interviews.index');
+    Route::get('/staff/interviews/{instrument:slug}/{participant}', [AssessmentController::class, 'staffShow'])->name('staff.interviews.show');
+    Route::post('/staff/interviews/{instrument:slug}/{participant}', [AssessmentController::class, 'staffStore'])->name('staff.interviews.store');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {

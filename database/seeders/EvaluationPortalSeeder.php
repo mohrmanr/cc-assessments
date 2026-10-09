@@ -23,7 +23,6 @@ class EvaluationPortalSeeder extends Seeder
                 'description' => 'Specialized treatment for elevated trauma symptoms.',
                 'reassessment_schedule' => [
                     ['instrument_slug' => 'pcl-5', 'interval_weeks' => 4],
-                    ['instrument_slug' => 'des-ii', 'interval_weeks' => 8],
                     ['instrument_slug' => 'gse', 'interval_weeks' => 8],
                 ],
             ]
@@ -53,28 +52,6 @@ class EvaluationPortalSeeder extends Seeder
                     'method' => 'sum',
                     'description' => 'Complete the PCL-5 to establish your baseline PTSD symptom score.',
                     'instructions' => 'Over the last month, how much were you bothered by each item below?',
-                ],
-            ],
-            [
-                'slug' => 'des-ii',
-                'name' => 'Dissociative Experiences Scale-II',
-                'version' => 'DES-II',
-                'domain' => 'dissociation',
-                'items' => config('portal.des_ii_items'),
-                'scoring_config' => [
-                    'threshold' => 30,
-                    'method' => 'mean_x100',
-                    'description' => 'Complete the Dissociative Experiences Scale-II.',
-                    'instructions' => 'For each item, use the slider to indicate what percentage of the time the experience happens to you (0–100).',
-                    'scale_type' => 'continuous',
-                    'min' => 0,
-                    'max' => 100,
-                    'step' => 1,
-                    'scale_labels' => [
-                        'left' => '0 Never',
-                        'center' => 'Half the time',
-                        'right' => '100 Always',
-                    ],
                 ],
             ],
             [

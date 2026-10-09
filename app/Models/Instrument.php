@@ -26,6 +26,11 @@ class Instrument extends Model
         ];
     }
 
+    public function isStaffAdministered(): bool
+    {
+        return ($this->scoring_config['administered_by'] ?? 'participant') === 'staff';
+    }
+
     public function assessmentResults(): HasMany
     {
         return $this->hasMany(AssessmentResult::class);

@@ -126,10 +126,17 @@
                         </div>
                     </template>
                 </div>
-                <div class="flex items-center border-t border-gray-100 pt-3">
+                <div class="flex flex-wrap items-center gap-6 border-t border-gray-100 pt-3">
                     <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                         <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $instrument->is_active)) class="rounded border-gray-300 text-indigo-600">
                         Active on participant dashboards
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700" title="Staff interview: hidden from participants; a Clinician or Admin enters the answers from the Interviews page.">
+                        Completed by
+                        <select name="administered_by" class="rounded-md border-gray-300 text-sm">
+                            <option value="participant" @selected(old('administered_by', $administeredBy) === 'participant')>Participant (self-service)</option>
+                            <option value="staff" @selected(old('administered_by', $administeredBy) === 'staff')>Staff interview</option>
+                        </select>
                     </label>
                 </div>
             </div>

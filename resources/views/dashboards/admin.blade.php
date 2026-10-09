@@ -394,12 +394,14 @@
                         <code>"choice"</code> with their own <code>options</code>, <code>"number"</code> (whole number 0&ndash;999), or <code>"text"</code>.
                         Only shared-scale questions count toward the score. Add <code>"required": false</code> to make a question optional.
                         For a survey with no score (for example demographics), set <code>"method": "none"</code>; <code>response_labels</code> can then be omitted if no question uses the shared scale.
+                        Set <code>"administered_by": "staff"</code> for interview assessments: participants won't see them, and Clinicians or Admins enter the answers from the Interviews page.
                     </p>
                     <pre class="overflow-auto rounded-md bg-gray-900 p-4 text-xs text-gray-100"><code>{
   "slug": "demographics",
   "name": "Demographic Survey",
   "version": "Demographics",
   "domain": "demographics",
+  "administered_by": "staff",
   "scoring_config": {"method": "none"},
   "items": [
     {"id": "gender", "text": "What is your gender?", "type": "choice",

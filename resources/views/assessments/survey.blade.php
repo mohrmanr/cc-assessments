@@ -15,6 +15,14 @@
     <div class="py-12" style="padding-bottom: 5rem;">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white shadow-sm rounded-lg p-6 space-y-6">
+                @isset($enteringFor)
+                    <div style="padding: 0.875rem 1rem; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 0.5rem; font-size: 0.875rem; color: #78350f;">
+                        <strong>Staff entry:</strong> recording interview answers for
+                        <strong>{{ $enteringFor->user->name }}</strong> (User ID {{ $enteringFor->user_id }}, {{ $enteringFor->user->email }}).
+                        <a href="{{ route('staff.interviews.index') }}" style="margin-left: 0.5rem; font-weight: 600; color: #4338ca;">Cancel</a>
+                    </div>
+                @endisset
+
                 @if (! empty($survey['description']))
                     <p class="text-sm text-gray-700">{{ $survey['description'] }}</p>
                 @endif

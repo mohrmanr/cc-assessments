@@ -20,6 +20,11 @@
                             Courses
                         </x-nav-link>
                     @endif
+                    @if (Auth::user()->isAdmin() || Auth::user()->hasRole(\App\Enums\UserRole::Clinician))
+                        <x-nav-link :href="route('staff.interviews.index')" :active="request()->routeIs('staff.interviews.*')">
+                            {{ __('Interviews') }}
+                        </x-nav-link>
+                    @endif
                     @if (Auth::user()->isAdmin())
                         <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                             Users
@@ -83,6 +88,11 @@
             @if (Auth::user()->isLearner())
                 <x-responsive-nav-link :href="route('courses.index')" :active="request()->routeIs('courses.*')">
                     Courses
+                </x-responsive-nav-link>
+            @endif
+            @if (Auth::user()->isAdmin() || Auth::user()->hasRole(\App\Enums\UserRole::Clinician))
+                <x-responsive-nav-link :href="route('staff.interviews.index')" :active="request()->routeIs('staff.interviews.*')">
+                    {{ __('Interviews') }}
                 </x-responsive-nav-link>
             @endif
             @if (Auth::user()->isAdmin())

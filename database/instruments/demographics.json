@@ -3,6 +3,7 @@
   "name": "Demographic Survey",
   "version": "Demographics",
   "domain": "demographics",
+  "administered_by": "staff",
   "description": "A short set of background questions for the Trauma study.",
   "instructions": "Please answer each question. Questions marked (optional) can be left blank.",
   "intro": [

@@ -18,6 +18,7 @@ class AssessmentResult extends Model
         'item_responses',
         'treatment_track_id',
         'primary_clinician_id',
+        'entered_by_user_id',
         'threshold_met',
         'threshold_flags',
         'administered_at',
@@ -53,6 +54,11 @@ class AssessmentResult extends Model
     public function primaryClinician(): BelongsTo
     {
         return $this->belongsTo(User::class, 'primary_clinician_id');
+    }
+
+    public function enteredBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'entered_by_user_id');
     }
 
     public function treatmentRecommendations(): HasMany
