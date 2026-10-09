@@ -88,6 +88,10 @@ _Avoid_: Purge, archive
 After eligibility approval, the participant receives a one-time email invite link to set their password and activate their account. Links expire and may be resent.
 _Avoid_: Registration, signup
 
+**Informed Consent**:
+The research consent form a Participant must answer Yes to after Account Activation and before any Assessment (self-service or staff interview). Each Yes/No is stored with name, date, and form version; a No can later become Yes, but a Yes is withdrawn only through the Principal Investigator.
+_Avoid_: Terms, agreement, signup
+
 **Safety Flag**:
 A high-risk signal during screening (e.g. suicidality) that triggers a clinician alert even when no account is created.
 _Avoid_: Emergency, crisis (too broad without definition)

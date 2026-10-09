@@ -14,9 +14,38 @@
             <div class="bg-white shadow-sm rounded-lg p-6 space-y-4">
                 <p class="text-gray-700">Welcome, {{ auth()->user()->name }}.</p>
 
-                @if (! $baselineDone)
+                @if ($consented)
+                    <p class="text-sm text-gray-600">
+                        Informed consent signed {{ $consent->created_at->format('M j, Y') }}.
+                        <a href="{{ route('participant.consent.show') }}" class="font-semibold text-indigo-700 underline">View / print your copy</a>
+                    </p>
+                @elseif ($consent)
+                    <div class="rounded-md bg-amber-50 border border-amber-200 p-4">
+                        <p class="text-sm font-semibold text-amber-900">Step 3 — Informed consent</p>
+                        <p class="text-sm text-amber-900 mt-1">
+                            On {{ $consent->created_at->format('M j, Y') }} you chose not to participate in the research, so your surveys are locked.
+                            If you have questions or change your mind, contact Andrew Schaeffer (Principal Investigator) at
+                            <a href="mailto:acsinnyc@gmail.com" class="underline">acsinnyc@gmail.com</a> or 646-586-5597.
+                        </p>
+                        <a href="{{ route('participant.consent.show') }}" class="mt-3 inline-flex rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">
+                            Review consent form again
+                        </a>
+                    </div>
+                @else
                     <div class="rounded-md bg-indigo-50 border border-indigo-100 p-4">
-                        <p class="text-sm font-semibold text-indigo-900">Step 3 — Baseline surveys</p>
+                        <p class="text-sm font-semibold text-indigo-900">Step 3 — Informed consent</p>
+                        <p class="text-sm text-indigo-800 mt-1">Before starting your surveys, please read the research consent form and choose whether to participate.</p>
+                        <a href="{{ route('participant.consent.show') }}" class="mt-3 inline-flex rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
+                            Review consent form
+                        </a>
+                    </div>
+                @endif
+
+                @if (! $consented)
+                    <p class="text-sm text-gray-600">Step 4 — Baseline surveys (available after you agree to the consent form)</p>
+                @elseif (! $baselineDone)
+                    <div class="rounded-md bg-indigo-50 border border-indigo-100 p-4">
+                        <p class="text-sm font-semibold text-indigo-900">Step 4 — Baseline surveys</p>
                         <p class="text-sm text-indigo-800 mt-1">Complete each baseline survey so your care team has a starting point.</p>
                     </div>
                 @else
@@ -33,6 +62,8 @@
                                 </div>
                                 @if ($survey['completed'])
                                     <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Complete</span>
+                                @elseif (! $consented)
+                                    <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">Locked</span>
                                 @else
                                     <span class="rounded-full bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-800">Pending</span>
                                 @endif
@@ -45,6 +76,8 @@
                                 <p class="mt-1 text-xs text-gray-500">
                                     Completed {{ $survey['result']->administered_at->format('M j, Y g:i A') }}
                                 </p>
+                            @elseif (! $consented)
+                                <p class="mt-3 text-sm text-gray-500">Available after you agree to the informed consent form.</p>
                             @else
                                 <a href="{{ route($survey['route_name'], $survey['route_params'] ?? []) }}" class="mt-3 inline-flex rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
                                     Start {{ $survey['label'] }}
@@ -54,7 +87,7 @@
                     @endforeach
                 </div>
 
-                @if ($baselineDone)
+                @if ($consented && $baselineDone)
                     <div class="rounded-md bg-green-50 border border-green-100 p-4 text-sm text-green-900">
                         Thank you for completing your baseline surveys. Your care team will review your responses.
                     </div>

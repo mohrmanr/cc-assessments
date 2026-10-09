@@ -30,6 +30,12 @@ return [
         'rmohrmann@gmail.com',
     ],
 
+    /*
+     * Version of resources/views/participant/consent-text.blade.php. Bump it whenever the
+     * consent wording changes so each recorded decision shows which text the participant saw.
+     */
+    'consent_version' => 'v3',
+
     'baseline_surveys' => [
         'pcl-5' => [
             'route_name' => 'participant.assessments.pcl5',

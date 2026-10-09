@@ -62,7 +62,7 @@ class AssessmentController extends Controller
             ->values();
 
         $participants = Participant::query()
-            ->with(['user', 'assessmentResults' => fn ($query) => $query
+            ->with(['user', 'latestConsent', 'assessmentResults' => fn ($query) => $query
                 ->whereIn('instrument_id', $instruments->pluck('id'))
                 ->where('administration_type', AdministrationType::Baseline)
                 ->with('enteredBy')])
@@ -76,6 +76,10 @@ class AssessmentController extends Controller
     public function staffShow(Instrument $instrument, Participant $participant): View|RedirectResponse
     {
         abort_unless($instrument->isStaffAdministered() && $instrument->is_active, 404);
+
+        if (! $participant->hasConsented()) {
+            return $this->redirectAwaitingConsent($participant);
+        }
 
         $existing = $this->baselineResult($participant, $instrument);
         if ($existing) {
@@ -96,6 +100,10 @@ class AssessmentController extends Controller
     {
         abort_unless($instrument->isStaffAdministered() && $instrument->is_active, 404);
 
+        if (! $participant->hasConsented()) {
+            return $this->redirectAwaitingConsent($participant);
+        }
+
         if ($this->baselineResult($participant, $instrument)) {
             return redirect()
                 ->route('staff.interviews.index')
@@ -107,6 +115,13 @@ class AssessmentController extends Controller
         return redirect()
             ->route('staff.interviews.index')
             ->with('status', "Saved {$instrument->name} for {$participant->user->name} (User ID {$participant->user_id}).");
+    }
+
+    protected function redirectAwaitingConsent(Participant $participant): RedirectResponse
+    {
+        return redirect()
+            ->route('staff.interviews.index')
+            ->withErrors(['interview' => "{$participant->user->name} has not agreed to the informed consent form yet. Interview answers can't be entered until they click Yes on their consent page."]);
     }
 
     protected function showBaselineSurvey(string $slug): View|RedirectResponse

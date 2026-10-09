@@ -8,6 +8,7 @@ use App\Http\Controllers\Learner\CourseController;
 use App\Http\Controllers\Clinician\CaseloadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Participant\AssessmentController;
+use App\Http\Controllers\Participant\ConsentController;
 use App\Http\Controllers\Participant\ParticipantDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScreeningController;
@@ -45,12 +46,17 @@ Route::middleware(['auth', 'verified', 'role:learner,admin'])->group(function ()
 
 Route::middleware(['auth', 'verified', 'role:participant'])->group(function () {
     Route::get('/participant', [ParticipantDashboardController::class, 'index'])->name('participant.dashboard');
-    Route::get('/participant/assessments/pcl5', [AssessmentController::class, 'showPcl5'])->name('participant.assessments.pcl5');
-    Route::post('/participant/assessments/pcl5', [AssessmentController::class, 'storePcl5'])->name('participant.assessments.pcl5.store');
-    Route::get('/participant/assessments/ace', [AssessmentController::class, 'showAce'])->name('participant.assessments.ace');
-    Route::post('/participant/assessments/ace', [AssessmentController::class, 'storeAce'])->name('participant.assessments.ace.store');
-    Route::get('/participant/assessments/{instrument:slug}', [AssessmentController::class, 'show'])->name('participant.assessments.show');
-    Route::post('/participant/assessments/{instrument:slug}', [AssessmentController::class, 'store'])->name('participant.assessments.store');
+    Route::get('/participant/consent', [ConsentController::class, 'show'])->name('participant.consent.show');
+    Route::post('/participant/consent', [ConsentController::class, 'store'])->name('participant.consent.store');
+
+    Route::middleware('consented')->group(function () {
+        Route::get('/participant/assessments/pcl5', [AssessmentController::class, 'showPcl5'])->name('participant.assessments.pcl5');
+        Route::post('/participant/assessments/pcl5', [AssessmentController::class, 'storePcl5'])->name('participant.assessments.pcl5.store');
+        Route::get('/participant/assessments/ace', [AssessmentController::class, 'showAce'])->name('participant.assessments.ace');
+        Route::post('/participant/assessments/ace', [AssessmentController::class, 'storeAce'])->name('participant.assessments.ace.store');
+        Route::get('/participant/assessments/{instrument:slug}', [AssessmentController::class, 'show'])->name('participant.assessments.show');
+        Route::post('/participant/assessments/{instrument:slug}', [AssessmentController::class, 'store'])->name('participant.assessments.store');
+    });
 });
 
 Route::middleware(['auth', 'verified', 'role:clinician'])->group(function () {

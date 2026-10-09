@@ -76,6 +76,18 @@ class DemographicSurveyTest extends TestCase
         $participantProfile = $this->participant->participantProfile;
         $clinician = User::query()->where('email', 'clinician@connectionscounseling.test')->firstOrFail();
 
+        $this->actingAs($clinician)->get(route('staff.interviews.index'))
+            ->assertOk()
+            ->assertSee('Awaiting consent')
+            ->assertDontSee(route('staff.interviews.show', [$instrument, $participantProfile]), false);
+        $this->actingAs($clinician)
+            ->post(route('staff.interviews.store', [$instrument, $participantProfile]), $this->validAnswers())
+            ->assertSessionHasErrors('interview');
+        $this->assertFalse(AssessmentResult::query()->where('instrument_id', $instrument->id)->exists());
+
+        $this->actingAs($this->participant)->post(route('participant.consent.store'), ['decision' => 'yes'])
+            ->assertRedirect(route('participant.dashboard'));
+
         $this->actingAs($this->participant)->get(route('participant.dashboard'))
             ->assertOk()
             ->assertDontSee('Demographics');
@@ -203,6 +215,7 @@ class DemographicSurveyTest extends TestCase
         ])->assertSessionHasNoErrors();
         $instrument = Instrument::query()->where('slug', 'mixed-check')->firstOrFail();
 
+        $this->actingAs($this->participant)->post(route('participant.consent.store'), ['decision' => 'yes']);
         $this->actingAs($this->participant)
             ->post(route('participant.assessments.store', $instrument), ['q1' => '2', 'q2' => '1', 'age' => '40', 'role' => '2'])
             ->assertSessionHasNoErrors();

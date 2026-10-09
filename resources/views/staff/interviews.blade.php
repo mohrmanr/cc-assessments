@@ -27,6 +27,7 @@
                             <tr>
                                 <th class="px-4 py-3">User ID</th>
                                 <th class="px-4 py-3">Participant</th>
+                                <th class="px-4 py-3">Consent</th>
                                 @foreach ($instruments as $instrument)
                                     <th class="px-4 py-3">{{ $instrument->version ?: $instrument->name }}</th>
                                 @endforeach
@@ -39,6 +40,21 @@
                                     <td class="px-4 py-3 align-top">
                                         <p class="font-semibold text-gray-900">{{ $participant->user->name }}</p>
                                         <p class="text-gray-500">{{ $participant->user->email }}</p>
+                                    </td>
+                                    @php
+                                        $consent = $participant->latestConsent;
+                                        $consented = $participant->hasConsented();
+                                    @endphp
+                                    <td class="px-4 py-3 align-top">
+                                        @if ($consented)
+                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Signed</span>
+                                            <p class="mt-1 text-xs text-gray-500">{{ $consent->created_at->format('M j, Y') }}</p>
+                                        @elseif ($consent)
+                                            <span class="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">Declined</span>
+                                            <p class="mt-1 text-xs text-gray-500">{{ $consent->created_at->format('M j, Y') }}</p>
+                                        @else
+                                            <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">Not yet</span>
+                                        @endif
                                     </td>
                                     @foreach ($instruments as $instrument)
                                         @php
@@ -53,6 +69,8 @@
                                                         by {{ $result->enteredBy->name }}
                                                     @endif
                                                 </p>
+                                            @elseif (! $consented)
+                                                <span class="text-xs text-gray-500">Awaiting consent</span>
                                             @else
                                                 <a href="{{ route('staff.interviews.show', [$instrument, $participant]) }}" class="inline-flex rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">
                                                     Enter answers
@@ -63,7 +81,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ 2 + $instruments->count() }}" class="px-4 py-6 text-sm text-gray-500">No participants yet.</td>
+                                    <td colspan="{{ 3 + $instruments->count() }}" class="px-4 py-6 text-sm text-gray-500">No participants yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

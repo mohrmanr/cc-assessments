@@ -53,4 +53,19 @@ class Participant extends Model
     {
         return $this->hasOne(MessageThread::class);
     }
+
+    public function consents(): HasMany
+    {
+        return $this->hasMany(ParticipantConsent::class);
+    }
+
+    public function latestConsent(): HasOne
+    {
+        return $this->hasOne(ParticipantConsent::class)->latestOfMany();
+    }
+
+    public function hasConsented(): bool
+    {
+        return $this->latestConsent?->decision === ParticipantConsent::AGREED;
+    }
 }

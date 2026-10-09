@@ -67,7 +67,10 @@ class ParticipantDashboardController extends Controller
                 ->first()
             : null;
 
-        return view('dashboards.participant', compact('participant', 'baselineDone', 'baselineSurveys', 'latestResult'));
+        $consent = $participant?->latestConsent;
+        $consented = (bool) $participant?->hasConsented();
+
+        return view('dashboards.participant', compact('participant', 'baselineDone', 'baselineSurveys', 'latestResult', 'consent', 'consented'));
     }
 
     protected function canRenderUploadedAssessment(Instrument $instrument): bool
