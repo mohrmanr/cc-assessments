@@ -11,14 +11,17 @@ class InstrumentScorer
      * @param  array<string, int>  $itemResponses
      * @return array{total: float, threshold_met: bool, threshold: float|int|null, subscale_scores?: array<string, mixed>}
      */
-    public function scorePcl5Demo(array $itemResponses): array
+    public function scorePcl5Demo(array $itemResponses, array $config = []): array
     {
         $total = array_sum($itemResponses);
-        $threshold = config('portal.pcl5_demo_threshold', 13);
+        $threshold = is_numeric($config['threshold'] ?? null)
+            ? $config['threshold']
+            : config('portal.pcl5_demo_threshold', 13);
+        $direction = $config['direction'] ?? 'above';
 
         return [
             'total' => $total,
-            'threshold_met' => $total >= $threshold,
+            'threshold_met' => $direction === 'below' ? $total <= $threshold : $total >= $threshold,
             'threshold' => $threshold,
         ];
     }
@@ -30,7 +33,7 @@ class InstrumentScorer
     public function score(Instrument $instrument, array $itemResponses): array
     {
         if ($instrument->slug === 'pcl-5') {
-            return $this->scorePcl5Demo($itemResponses);
+            return $this->scorePcl5Demo($itemResponses, $instrument->scoring_config ?? []);
         }
 
         $config = $instrument->scoring_config ?? [];

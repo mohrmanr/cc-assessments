@@ -62,6 +62,10 @@ class InstrumentController extends Controller
                 ?? 'Thank you for completing this survey. Your responses have been recorded for your care team.',
             'referenceFields' => $this->resolveReferenceFields($instrument, is_array($surveyConfig) ? $surveyConfig : []),
             'administeredBy' => $scoringConfig['administered_by'] ?? 'participant',
+            'threshold' => $scoringConfig['threshold']
+                ?? ($instrument->slug === 'pcl-5' ? config('portal.pcl5_demo_threshold', 13) : null),
+            'thresholdDirection' => $scoringConfig['direction'] ?? 'above',
+            'scoringMethod' => $scoringConfig['method'] ?? 'sum',
         ]);
     }
 
@@ -81,6 +85,8 @@ class InstrumentController extends Controller
             'completion_message' => ['nullable', 'string', 'max:2000'],
             'is_active' => ['sometimes', 'boolean'],
             'administered_by' => ['sometimes', 'in:participant,staff'],
+            'threshold' => ['nullable', 'numeric', 'min:0', 'max:9999'],
+            'direction' => ['sometimes', 'in:above,below'],
             'answer_type' => ['required', 'in:custom,buckets,slider'],
             'reference_fields' => ['nullable', 'array'],
             'reference_fields.*.id' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9_]*$/'],
@@ -212,6 +218,18 @@ class InstrumentController extends Controller
         $scoringConfig['item_attributes'] = $itemAttributes;
         if (isset($validated['administered_by'])) {
             $scoringConfig['administered_by'] = $validated['administered_by'];
+        }
+        if ($request->exists('threshold')) {
+            $raw = $validated['threshold'] ?? null;
+            if ($raw === null) {
+                unset($scoringConfig['threshold']);
+            } else {
+                $number = (float) $raw;
+                $scoringConfig['threshold'] = fmod($number, 1.0) === 0.0 ? (int) $number : $number;
+            }
+        }
+        if (isset($validated['direction'])) {
+            $scoringConfig['direction'] = $validated['direction'];
         }
 
         $instrument->update([

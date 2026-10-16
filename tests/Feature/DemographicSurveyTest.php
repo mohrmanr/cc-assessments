@@ -242,4 +242,48 @@ class DemographicSurveyTest extends TestCase
 
         $this->assertDatabaseMissing('instruments', ['slug' => 'bad']);
     }
+
+    public function test_admin_can_edit_the_score_threshold(): void
+    {
+        $ace = Instrument::query()->where('slug', 'ace')->firstOrFail();
+        $this->assertSame(4, $ace->scoring_config['threshold']);
+
+        $items = collect($ace->items)->map(fn (array $item): array => [
+            'id' => $item['id'],
+            'text' => $item['text'],
+            'type' => $item['type'] ?? 'scale',
+        ])->all();
+
+        $payload = [
+            'instructions' => 'Answer each question.',
+            'answer_type' => 'custom',
+            'response_labels' => [['value' => 0, 'label' => 'No'], ['value' => 1, 'label' => 'Yes']],
+            'items' => $items,
+        ];
+
+        $this->actingAs($this->admin)->get(route('admin.instruments.edit', $ace))
+            ->assertOk()
+            ->assertSee('Score cutoff')
+            ->assertSee('name="threshold"', false);
+
+        $this->actingAs($this->admin)->put(route('admin.instruments.update', $ace), [
+            ...$payload,
+            'threshold' => '2',
+            'direction' => 'above',
+        ])->assertSessionHasNoErrors();
+
+        $ace->refresh();
+        $this->assertSame(2, $ace->scoring_config['threshold']);
+        $this->assertSame('above', $ace->scoring_config['direction']);
+
+        $this->actingAs($this->admin)->put(route('admin.instruments.update', $ace), [
+            ...$payload,
+            'threshold' => '',
+            'direction' => 'below',
+        ])->assertSessionHasNoErrors();
+
+        $ace->refresh();
+        $this->assertArrayNotHasKey('threshold', $ace->scoring_config);
+        $this->assertSame('below', $ace->scoring_config['direction']);
+    }
 }
