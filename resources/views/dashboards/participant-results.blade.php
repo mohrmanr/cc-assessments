@@ -58,72 +58,78 @@
             @foreach ($results as $label => $series)
                 @php
                     $ordered = $series->sortBy('administered_at')->values();
-                    $dimensionKeys = $ordered
-                        ->flatMap(fn ($result) => array_keys(\App\Support\AttachmentQuadrantPresenter::flattenDimensions($result->subscale_scores['dimensions'] ?? [])))
-                        ->unique()
-                        ->values();
-                    $chartKeys = $dimensionKeys->isNotEmpty() ? $dimensionKeys : collect(['total']);
-                    $colors = ['#4f46e5', '#059669', '#dc2626', '#d97706', '#7c3aed'];
-                    $maxScore = max(1, $ordered->flatMap(function ($result) use ($chartKeys) {
-                        $dimensions = \App\Support\AttachmentQuadrantPresenter::flattenDimensions($result->subscale_scores['dimensions'] ?? []);
-                        return $chartKeys->map(fn ($key) => $key === 'total'
-                            ? (float) $result->total_score
-                            : (float) ($dimensions[$key] ?? 0));
-                    })->max());
-                    $chartSeries = $chartKeys->map(function ($key, $seriesIndex) use ($ordered, $maxScore, $colors) {
-                        $points = $ordered->map(function ($result, $index) use ($ordered, $maxScore, $key) {
-                            $count = max(1, $ordered->count() - 1);
+                    $showChart = str($label)->contains('ECR-RS');
+                    $chartSeries = collect();
+                    if ($showChart) {
+                        $dimensionKeys = $ordered
+                            ->flatMap(fn ($result) => array_keys(\App\Support\AttachmentQuadrantPresenter::flattenDimensions($result->subscale_scores['dimensions'] ?? [])))
+                            ->unique()
+                            ->values();
+                        $chartKeys = $dimensionKeys->isNotEmpty() ? $dimensionKeys : collect(['total']);
+                        $colors = ['#4f46e5', '#059669', '#dc2626', '#d97706', '#7c3aed'];
+                        $maxScore = max(1, $ordered->flatMap(function ($result) use ($chartKeys) {
                             $dimensions = \App\Support\AttachmentQuadrantPresenter::flattenDimensions($result->subscale_scores['dimensions'] ?? []);
-                            $score = $key === 'total'
+                            return $chartKeys->map(fn ($key) => $key === 'total'
                                 ? (float) $result->total_score
-                                : (float) ($dimensions[$key] ?? 0);
-                            $x = 60 + ($index / $count) * 620;
-                            $y = 220 - ($score / $maxScore) * 170;
+                                : (float) ($dimensions[$key] ?? 0));
+                        })->max());
+                        $chartSeries = $chartKeys->map(function ($key, $seriesIndex) use ($ordered, $maxScore, $colors) {
+                            $points = $ordered->map(function ($result, $index) use ($ordered, $maxScore, $key) {
+                                $count = max(1, $ordered->count() - 1);
+                                $dimensions = \App\Support\AttachmentQuadrantPresenter::flattenDimensions($result->subscale_scores['dimensions'] ?? []);
+                                $score = $key === 'total'
+                                    ? (float) $result->total_score
+                                    : (float) ($dimensions[$key] ?? 0);
+                                $x = 60 + ($index / $count) * 620;
+                                $y = 220 - ($score / $maxScore) * 170;
+
+                                return [
+                                    'x' => $x,
+                                    'y' => $y,
+                                    'score' => $score,
+                                    'date' => $result->administered_at->format('M Y'),
+                                ];
+                            });
 
                             return [
-                                'x' => $x,
-                                'y' => $y,
-                                'score' => $score,
-                                'date' => $result->administered_at->format('M Y'),
+                                'label' => $key === 'total' ? 'Total' : str($key)->replace('_', ' ')->title()->toString(),
+                                'color' => $colors[$seriesIndex % count($colors)],
+                                'points' => $points,
+                                'polyline' => $points->map(fn ($point) => $point['x'].','.$point['y'])->implode(' '),
                             ];
                         });
-
-                        return [
-                            'label' => $key === 'total' ? 'Total' : str($key)->replace('_', ' ')->title()->toString(),
-                            'color' => $colors[$seriesIndex % count($colors)],
-                            'points' => $points,
-                            'polyline' => $points->map(fn ($point) => $point['x'].','.$point['y'])->implode(' '),
-                        ];
-                    });
+                    }
                 @endphp
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="font-semibold text-lg text-gray-900">{{ $label }}</h3>
-                    <div class="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
-                        @foreach ($chartSeries as $line)
-                            <span class="inline-flex items-center gap-1">
-                                <span class="inline-block h-2 w-5 rounded" style="background-color: {{ $line['color'] }}"></span>
-                                {{ $line['label'] }}
-                            </span>
-                        @endforeach
-                    </div>
-                    <div class="mt-4 overflow-x-auto">
-                        <svg width="740" height="290" role="img" aria-label="{{ $label }} score history">
-                            <line x1="60" y1="220" x2="700" y2="220" stroke="#d1d5db" />
-                            <line x1="60" y1="40" x2="60" y2="220" stroke="#d1d5db" />
-                            <text x="20" y="45" font-size="12" fill="#6b7280">{{ $maxScore }}</text>
-                            <text x="35" y="224" font-size="12" fill="#6b7280">0</text>
+                    @if ($showChart)
+                        <div class="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
                             @foreach ($chartSeries as $line)
-                                <polyline points="{{ $line['polyline'] }}" fill="none" stroke="{{ $line['color'] }}" stroke-width="3" />
-                                @foreach ($line['points'] as $point)
-                                    <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="5" fill="{{ $line['color'] }}" />
-                                    <text x="{{ $point['x'] - 8 }}" y="{{ $point['y'] - 10 }}" font-size="12" fill="#111827">{{ rtrim(rtrim(number_format($point['score'], 2), '0'), '.') }}</text>
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="inline-block h-2 w-5 rounded" style="background-color: {{ $line['color'] }}"></span>
+                                    {{ $line['label'] }}
+                                </span>
+                            @endforeach
+                        </div>
+                        <div class="mt-4 overflow-x-auto">
+                            <svg width="740" height="290" role="img" aria-label="{{ $label }} score history">
+                                <line x1="60" y1="220" x2="700" y2="220" stroke="#d1d5db" />
+                                <line x1="60" y1="40" x2="60" y2="220" stroke="#d1d5db" />
+                                <text x="20" y="45" font-size="12" fill="#6b7280">{{ $maxScore }}</text>
+                                <text x="35" y="224" font-size="12" fill="#6b7280">0</text>
+                                @foreach ($chartSeries as $line)
+                                    <polyline points="{{ $line['polyline'] }}" fill="none" stroke="{{ $line['color'] }}" stroke-width="3" />
+                                    @foreach ($line['points'] as $point)
+                                        <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="5" fill="{{ $line['color'] }}" />
+                                        <text x="{{ $point['x'] - 8 }}" y="{{ $point['y'] - 10 }}" font-size="12" fill="#111827">{{ rtrim(rtrim(number_format($point['score'], 2), '0'), '.') }}</text>
+                                    @endforeach
                                 @endforeach
-                            @endforeach
-                            @foreach ($chartSeries->first()['points'] as $point)
-                                <text x="{{ $point['x'] - 24 }}" y="245" font-size="12" fill="#6b7280">{{ $point['date'] }}</text>
-                            @endforeach
-                        </svg>
-                    </div>
+                                @foreach ($chartSeries->first()['points'] as $point)
+                                    <text x="{{ $point['x'] - 24 }}" y="245" font-size="12" fill="#6b7280">{{ $point['date'] }}</text>
+                                @endforeach
+                            </svg>
+                        </div>
+                    @endif
                     <div class="mt-4 overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
                             <thead>
