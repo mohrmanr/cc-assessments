@@ -34,7 +34,7 @@
                 </form>
             </div>
 
-            <div class="bg-white shadow-sm rounded-lg overflow-x-auto">
+            <div class="bg-white shadow-sm rounded-lg w-full overflow-x-auto">
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
                     <p class="text-sm text-gray-600">User ID is the permanent number for each account. Use it to de-identify exported data.</p>
                     <a href="{{ route('admin.users.download') }}" class="inline-flex justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
@@ -49,7 +49,7 @@
                             <th class="px-4 py-3">Started therapy</th>
                             <th class="px-4 py-3">Roles</th>
                             <th class="px-4 py-3">Course access</th>
-                            <th class="px-4 py-3">Actions</th>
+                            <th class="sticky right-0 z-10 bg-gray-50 px-4 py-3 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -80,7 +80,7 @@
                                                 name="case_manager_email"
                                                 value="{{ $user->participantProfile->case_manager_email }}"
                                                 placeholder="alerts@example.com"
-                                                class="block w-52 rounded-md border-gray-300 text-sm"
+                                                class="block w-44 rounded-md border-gray-300 text-sm"
                                             >
                                             <button type="submit" class="block rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-500">Save</button>
                                         </form>
@@ -134,7 +134,7 @@
                                 <td class="px-4 py-4 align-top space-y-3">
                                     <form method="POST" action="{{ route('admin.users.courses', $user) }}" class="flex flex-wrap gap-2">
                                         @csrf
-                                        <select name="course_id" class="rounded-md border-gray-300 text-sm" required>
+                                        <select name="course_id" class="rounded-md border-gray-300 text-sm" style="width: 14rem; max-width: 100%;" required>
                                             @foreach ($courses as $course)
                                                 <option value="{{ $course->id }}">{{ $course->title }}</option>
                                             @endforeach
@@ -143,7 +143,7 @@
                                     </form>
                                     <form method="POST" action="{{ route('admin.users.posttest-reset', $user) }}" class="flex flex-wrap gap-2" onsubmit="return confirm('Reset this posttest so the learner can retake it once?')">
                                         @csrf
-                                        <select name="course_id" class="rounded-md border-gray-300 text-sm" required>
+                                        <select name="course_id" class="rounded-md border-gray-300 text-sm" style="width: 14rem; max-width: 100%;" required>
                                             @foreach ($courses as $course)
                                                 <option value="{{ $course->id }}">{{ $course->title }}</option>
                                             @endforeach
@@ -151,7 +151,7 @@
                                         <button type="submit" class="rounded-md border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">Reset posttest</button>
                                     </form>
                                 </td>
-                                <td class="px-4 py-4 align-top space-y-3">
+                                <td class="sticky right-0 z-10 bg-white px-4 py-4 align-top space-y-3 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
                                     <details>
                                         <summary class="cursor-pointer text-xs font-semibold text-indigo-700 hover:text-indigo-600">Reset password</summary>
                                         <form method="POST" action="{{ route('admin.users.password', $user) }}" class="mt-2 space-y-2" onsubmit="return confirm('Set a new password for {{ $user->name }}?')">
