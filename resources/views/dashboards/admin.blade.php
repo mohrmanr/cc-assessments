@@ -207,7 +207,7 @@
                                     <td class="py-2 pr-4">
                                         <div class="font-medium text-gray-900">{{ $result->participant->user->name }}</div>
                                         <div class="text-xs text-gray-500">{{ $result->participant->user->email }}</div>
-                                        @if (in_array($result->instrument->slug, ['ecr-r', 'ecr-rs'], true))
+                                        @if ($result->instrument->slug === 'ecr-rs')
                                             <a href="{{ route('admin.participants.results', $result->participant) }}" class="mt-1 inline-block text-xs font-semibold text-indigo-600 hover:text-indigo-500">
                                                 View score chart
                                             </a>

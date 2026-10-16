@@ -89,19 +89,6 @@ class EvaluationPortalSeeder extends Seeder
                 ],
             ],
             [
-                'slug' => 'ecr-r',
-                'name' => 'Experiences in Close Relationships-Revised',
-                'version' => 'ECR-R',
-                'domain' => 'attachment',
-                'scoring_config' => [
-                    'threshold' => 4.0,
-                    'method' => 'subscale_mean',
-                    'subscale' => 'anxiety',
-                    'description' => 'Complete the Experiences in Close Relationships-Revised attachment assessment.',
-                    'instructions' => 'Select one answer per statement based on how you generally feel in close relationships.',
-                ],
-            ],
-            [
                 'slug' => 'ecr-rs',
                 'name' => 'Experiences in Close Relationships-Revised Short Form',
                 'version' => 'ECR-RS',

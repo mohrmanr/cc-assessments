@@ -125,7 +125,7 @@ A simple generated PDF for a Course (Learner name, title, date, Score), availabl
 _Avoid_: Transcript, CEU file (until credit rules are defined)
 
 **Assessment Battery**:
-A grouped set of instruments assigned together, such as the launch intake battery containing PCL-5, ACE Questionnaire, GSE, and ECR-R.
+A grouped set of instruments assigned together, such as the launch intake battery containing PCL-5, ACE Questionnaire, GSE, and ECR-RS.
 _Avoid_: Survey packet, test bundle
 
 **Baseline Assessment**:
@@ -173,7 +173,7 @@ A specific validated scale used in an assessment, identified by name and version
 _Avoid_: Survey, quiz, form
 
 **Launch Instruments**:
-PCL-5 (PTSD), ACE Questionnaire (adverse childhood experiences), GSE (general self-efficacy), ECR-R (attachment). Subject to clinical team confirmation before build.
+PCL-5 (PTSD), ACE Questionnaire (adverse childhood experiences), GSE (general self-efficacy), ECR-RS (attachment). Subject to clinical team confirmation before build.
 _Avoid_: PTSD test, attachment scale (informal)
 
 **Treatment (v1)**:
