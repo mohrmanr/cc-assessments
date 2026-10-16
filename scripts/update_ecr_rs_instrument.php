@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Production-safe: update only the ecr-rs instrument to 4-target (36-item) ECR-RS.
+ * Production-safe: update only the ecr-rs instrument to general / mother / father.
  *
  * Usage (from assessment-portal root):
  *   php scripts/update_ecr_rs_instrument.php
@@ -28,9 +28,9 @@ $config = $instrument->scoring_config ?? [];
 $config['threshold'] = 4.0;
 $config['method'] = 'attachment_targets';
 $config['direction'] = 'above';
-$config['description'] = 'Rate how you experience close relationships with your mother, father, partner, and best friend.';
-$config['instructions'] = 'You will answer the same set of questions four times - once for each person. For each statement, select how much you agree or disagree.';
-$config['repeat_for_targets'] = ['mother', 'father', 'partner', 'best_friend'];
+$config['description'] = 'Rate how you experience close relationships in general, and with your mother and your father.';
+$config['instructions'] = 'You will answer the same set of questions three times: once for close relationships in general, once for your mother, and once for your father. For each statement, select how much you agree or disagree.';
+$config['repeat_for_targets'] = ['general', 'mother', 'father'];
 $config['item_attributes'] = [
     ['key' => 'reverse_score', 'type' => 'boolean', 'label' => 'Reverse score', 'standard' => true],
     ['key' => 'target', 'type' => 'string', 'label' => 'Target'],

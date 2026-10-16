@@ -35,7 +35,7 @@
                         <div>
                             <h3 class="font-semibold text-lg text-gray-900">ECR-RS Attachment Quadrants</h3>
                             <p class="mt-1 text-sm text-gray-600">
-                                Each chart tracks anxiety and avoidance over time for one attachment figure (mother, father, partner, best friend).
+                                Each chart tracks anxiety and avoidance over time for close relationships in general, and for mother and father.
                                 Quadrant labels are visual shorthand, not a diagnosis.
                             </p>
                         </div>

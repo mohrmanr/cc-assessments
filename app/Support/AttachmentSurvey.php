@@ -6,10 +6,9 @@ class AttachmentSurvey
 {
     /** @var array<string, string> */
     public const TARGETS = [
+        'general' => 'General',
         'mother' => 'Mother',
         'father' => 'Father',
-        'partner' => 'Partner',
-        'best_friend' => 'Best Friend',
     ];
 
     /**
@@ -78,7 +77,7 @@ class AttachmentSurvey
     }
 
     /**
-     * Expand base items across mother / father / partner / best friend.
+     * Expand base items across general / mother / father.
      *
      * @param  array<int, array<string, mixed>>  $baseItems
      * @param  array<int, string>|null  $targetKeys
@@ -118,7 +117,7 @@ class AttachmentSurvey
         );
 
         if ($hasTargets) {
-            return $items;
+            return self::withoutRetiredTargets($items);
         }
 
         $repeatFor = $scoringConfig['repeat_for_targets'] ?? null;
@@ -126,7 +125,21 @@ class AttachmentSurvey
             return $items;
         }
 
-        return self::expandForTargets($items, $repeatFor);
+        return self::withoutRetiredTargets(self::expandForTargets($items, $repeatFor));
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    public static function withoutRetiredTargets(array $items): array
+    {
+        $allowed = array_keys(self::TARGETS);
+
+        return array_values(array_filter(
+            $items,
+            fn (array $item): bool => ! filled($item['target'] ?? null) || in_array($item['target'], $allowed, true)
+        ));
     }
 
     /**

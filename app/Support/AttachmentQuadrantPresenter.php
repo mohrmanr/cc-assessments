@@ -9,10 +9,9 @@ class AttachmentQuadrantPresenter
 {
     /** @var array<string, string> */
     public const TARGETS = [
+        'general' => 'General',
         'mother' => 'Mother',
         'father' => 'Father',
-        'partner' => 'Partner',
-        'best_friend' => 'Best Friend',
     ];
 
     /**

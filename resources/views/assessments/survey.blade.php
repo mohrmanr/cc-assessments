@@ -88,7 +88,11 @@
                                     {{ \App\Support\AttachmentSurvey::targetLabel($targetKey) }}
                                 </h3>
                                 <p style="margin: 0.35rem 0 0; font-size: 0.8125rem; color: #475569;">
-                                    Answer the following statements while thinking about your {{ strtolower(\App\Support\AttachmentSurvey::targetLabel($targetKey)) }}.
+                                    @if ($targetKey === 'general')
+                                        Answer the following statements about close relationships in general.
+                                    @else
+                                        Answer the following statements while thinking about your {{ strtolower(\App\Support\AttachmentSurvey::targetLabel($targetKey)) }}.
+                                    @endif
                                 </p>
                             </div>
                         @endif
