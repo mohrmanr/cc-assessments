@@ -46,6 +46,7 @@
                         <tr>
                             <th class="px-4 py-3">User ID</th>
                             <th class="px-4 py-3">Account</th>
+                            <th class="px-4 py-3">Started therapy</th>
                             <th class="px-4 py-3">Roles</th>
                             <th class="px-4 py-3">Course access</th>
                             <th class="px-4 py-3">Actions</th>
@@ -58,6 +59,48 @@
                                 <td class="px-4 py-4 align-top">
                                     <p class="font-semibold text-gray-900">{{ $user->name }}</p>
                                     <p class="text-gray-500">{{ $user->email }}</p>
+                                </td>
+                                <td class="px-4 py-4 align-top">
+                                    @if ($user->participantProfile)
+                                        <form method="POST" action="{{ route('admin.users.therapy-start', $user) }}" class="space-y-2">
+                                            @csrf
+                                            @method('PUT')
+                                            <label class="block text-xs text-gray-500" for="therapy-start-{{ $user->id }}">Start date</label>
+                                            <input
+                                                id="therapy-start-{{ $user->id }}"
+                                                type="date"
+                                                name="therapy_started_on"
+                                                value="{{ $user->participantProfile->therapy_started_on?->format('Y-m-d') }}"
+                                                class="rounded-md border-gray-300 text-sm"
+                                            >
+                                            <label class="block text-xs text-gray-500" for="case-manager-{{ $user->id }}">Case manager email</label>
+                                            <input
+                                                id="case-manager-{{ $user->id }}"
+                                                type="email"
+                                                name="case_manager_email"
+                                                value="{{ $user->participantProfile->case_manager_email }}"
+                                                placeholder="alerts@example.com"
+                                                class="block w-52 rounded-md border-gray-300 text-sm"
+                                            >
+                                            <button type="submit" class="block rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-500">Save</button>
+                                        </form>
+                                        @if ($user->participantProfile->therapy_started_on)
+                                            <ul class="mt-2 space-y-0.5 text-xs text-gray-600">
+                                                @foreach (\App\Services\TherapyFollowUpAlerts::MILESTONES as $key => $milestone)
+                                                    @php
+                                                        $due = $user->participantProfile->therapy_started_on->copy()->addMonths($milestone['months']);
+                                                        $sent = isset(($user->participantProfile->therapy_alerts_sent ?? [])[$key]);
+                                                    @endphp
+                                                    <li>{{ $milestone['label'] }} alert {{ $due->format('M j, Y') }}@if ($sent) — sent @endif</li>
+                                                @endforeach
+                                            </ul>
+                                            @unless ($user->participantProfile->case_manager_email)
+                                                <p class="mt-1 text-xs text-amber-800">Add a case manager email or these alerts will not be sent.</p>
+                                            @endunless
+                                        @endif
+                                    @else
+                                        <p class="text-xs text-gray-500">Participants only</p>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-4 align-top">
                                     <form

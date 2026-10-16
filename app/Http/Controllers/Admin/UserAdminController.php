@@ -19,7 +19,7 @@ class UserAdminController extends Controller
     public function index(): View
     {
         $users = User::query()
-            ->with('assignedRoles')
+            ->with(['assignedRoles', 'participantProfile'])
             ->orderBy('name')
             ->get();
         $courses = Course::query()->orderBy('title')->get();
@@ -34,7 +34,7 @@ class UserAdminController extends Controller
 
         return response()->streamDownload(function (): void {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['user_id', 'participant_id', 'name', 'email', 'roles', 'is_active', 'created_at']);
+            fputcsv($handle, ['user_id', 'participant_id', 'name', 'email', 'roles', 'is_active', 'therapy_started_on', 'case_manager_email', 'created_at']);
 
             User::query()
                 ->with(['assignedRoles', 'participantProfile'])
@@ -48,6 +48,8 @@ class UserAdminController extends Controller
                             $user->email,
                             collect($user->roleList())->map(fn (UserRole $role) => $role->label())->implode('; '),
                             $user->is_active ? 'yes' : 'no',
+                            $user->participantProfile?->therapy_started_on?->toDateString(),
+                            $user->participantProfile?->case_manager_email,
                             $user->created_at?->toIso8601String(),
                         ]);
                     }
@@ -151,6 +153,34 @@ class UserAdminController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('status', "Password reset for {$user->name} ({$user->email}). Share the new password with them privately.");
+    }
+
+    public function updateTherapyStart(Request $request, User $user): RedirectResponse
+    {
+        $participant = $user->participantProfile;
+        abort_unless($participant, 404);
+
+        $validated = $request->validate([
+            'therapy_started_on' => ['nullable', 'date'],
+            'case_manager_email' => ['nullable', 'email', 'max:255'],
+        ]);
+
+        $newDate = $validated['therapy_started_on'] ?? null;
+        $dateChanged = $participant->therapy_started_on?->toDateString() !== $newDate;
+
+        $participant->update([
+            'therapy_started_on' => $newDate,
+            'case_manager_email' => $validated['case_manager_email'] ?? null,
+            'therapy_alerts_sent' => $dateChanged ? null : $participant->therapy_alerts_sent,
+        ]);
+
+        $when = $participant->therapy_started_on?->format('M j, Y');
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('status', $when
+                ? "Started therapy for {$user->name} set to {$when}."
+                : "Cleared the started-therapy date for {$user->name}.");
     }
 
     public function destroy(User $user): RedirectResponse

@@ -14,6 +14,9 @@ class Participant extends Model
         'treatment_track_id',
         'primary_clinician_id',
         'enrolled_at',
+        'therapy_started_on',
+        'case_manager_email',
+        'therapy_alerts_sent',
         'status',
     ];
 
@@ -21,6 +24,8 @@ class Participant extends Model
     {
         return [
             'enrolled_at' => 'datetime',
+            'therapy_started_on' => 'date',
+            'therapy_alerts_sent' => 'array',
         ];
     }
 
