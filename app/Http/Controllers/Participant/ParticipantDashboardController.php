@@ -6,6 +6,7 @@ use App\Enums\AdministrationType;
 use App\Http\Controllers\Controller;
 use App\Models\AssessmentResult;
 use App\Models\Instrument;
+use App\Services\AssessmentFollowUp;
 use App\Support\SurveyItem;
 use Illuminate\View\View;
 
@@ -29,35 +30,47 @@ class ParticipantDashboardController extends Controller
             ->reject(fn (string $slug): bool => (bool) $instruments->get($slug)?->isStaffAdministered())
             ->values();
 
-        $baselineResults = collect();
+        $followUp = app(AssessmentFollowUp::class);
+        $resultsBySlug = collect();
         if ($participant && $instruments->isNotEmpty()) {
-            $baselineResults = AssessmentResult::query()
+            $resultsBySlug = AssessmentResult::query()
                 ->where('participant_id', $participant->id)
                 ->whereIn('instrument_id', $instruments->pluck('id'))
-                ->where('administration_type', AdministrationType::Baseline)
                 ->with('instrument')
+                ->orderBy('administered_at')
                 ->get()
-                ->keyBy(fn (AssessmentResult $result) => $result->instrument->slug);
+                ->groupBy(fn (AssessmentResult $result) => $result->instrument->slug);
         }
 
         $baselineSurveys = $instrumentSlugs
-            ->map(function (string $slug) use ($baselineResults, $instruments, $surveyConfigs): array {
+            ->map(function (string $slug) use ($resultsBySlug, $instruments, $surveyConfigs, $followUp, $participant): array {
                 $instrument = $instruments->get($slug);
                 $survey = $surveyConfigs->get($slug) ?? $this->surveyFromInstrument($instrument);
                 $survey = $this->overlayInstrumentCopy($survey, $instrument);
-                $result = $baselineResults->get($slug);
+                $results = $resultsBySlug->get($slug, collect());
+                $baseline = $results->first(
+                    fn (AssessmentResult $result): bool => $result->administration_type === AdministrationType::Baseline
+                );
+                $latest = $results->last();
+                $openMilestone = ($participant && $instrument)
+                    ? $followUp->nextOpenMilestone($participant, $instrument, $results)
+                    : null;
 
                 return [
                     ...$survey,
                     'slug' => $slug,
                     'instrument' => $instrument,
-                    'result' => $result,
-                    'completed' => $result !== null,
+                    'result' => $latest,
+                    'baseline_result' => $baseline,
+                    'completed' => $baseline !== null && $openMilestone === null,
+                    'follow_up_due' => $openMilestone !== null,
+                    'follow_up_label' => $openMilestone ? $followUp->milestoneLabel($openMilestone) : null,
                 ];
             })
             ->values();
 
-        $baselineDone = $baselineSurveys->every(fn (array $survey): bool => $survey['completed']);
+        $baselineDone = $baselineSurveys->every(fn (array $survey): bool => $survey['baseline_result'] !== null);
+        $followUpDue = $baselineSurveys->contains(fn (array $survey): bool => $survey['follow_up_due']);
 
         $latestResult = $participant
             ? AssessmentResult::query()
@@ -70,7 +83,15 @@ class ParticipantDashboardController extends Controller
         $consent = $participant?->latestConsent;
         $consented = (bool) $participant?->hasConsented();
 
-        return view('dashboards.participant', compact('participant', 'baselineDone', 'baselineSurveys', 'latestResult', 'consent', 'consented'));
+        return view('dashboards.participant', compact(
+            'participant',
+            'baselineDone',
+            'followUpDue',
+            'baselineSurveys',
+            'latestResult',
+            'consent',
+            'consented'
+        ));
     }
 
     protected function canRenderUploadedAssessment(Instrument $instrument): bool

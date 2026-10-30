@@ -13,6 +13,7 @@ class AssessmentResult extends Model
         'participant_id',
         'instrument_id',
         'administration_type',
+        'milestone_key',
         'total_score',
         'subscale_scores',
         'item_responses',

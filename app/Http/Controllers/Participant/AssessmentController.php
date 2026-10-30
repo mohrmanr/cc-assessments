@@ -9,6 +9,7 @@ use App\Models\Instrument;
 use App\Models\Participant;
 use App\Models\User;
 use App\Notifications\AssessmentCompletedNotification;
+use App\Services\AssessmentFollowUp;
 use App\Services\InstrumentScorer;
 use App\Services\TreatmentRecommendationService;
 use App\Support\AttachmentSurvey;
@@ -61,16 +62,17 @@ class AssessmentController extends Controller
             ->filter(fn (Instrument $instrument): bool => $instrument->isStaffAdministered())
             ->values();
 
+        $followUp = app(AssessmentFollowUp::class);
         $participants = Participant::query()
             ->with(['user', 'latestConsent', 'assessmentResults' => fn ($query) => $query
                 ->whereIn('instrument_id', $instruments->pluck('id'))
-                ->where('administration_type', AdministrationType::Baseline)
-                ->with('enteredBy')])
+                ->with('enteredBy')
+                ->orderByDesc('administered_at')])
             ->get()
             ->sortBy(fn (Participant $participant): string => strtolower($participant->user->name))
             ->values();
 
-        return view('staff.interviews', compact('instruments', 'participants'));
+        return view('staff.interviews', compact('instruments', 'participants', 'followUp'));
     }
 
     public function staffShow(Instrument $instrument, Participant $participant): View|RedirectResponse
@@ -81,14 +83,19 @@ class AssessmentController extends Controller
             return $this->redirectAwaitingConsent($participant);
         }
 
-        $existing = $this->baselineResult($participant, $instrument);
-        if ($existing) {
+        $followUp = app(AssessmentFollowUp::class);
+        $mode = $this->resolveAdministrationMode($followUp, $participant, $instrument);
+        if ($mode === null) {
+            $latest = $followUp->latestResult($participant, $instrument);
+
             return redirect()
                 ->route('staff.interviews.index')
-                ->withErrors(['interview' => "{$instrument->name} was already entered for {$participant->user->name} on {$existing->administered_at->format('M j, Y')}. Ask an admin to reset it if it needs to be re-entered."]);
+                ->withErrors(['interview' => $latest
+                    ? "{$instrument->name} for {$participant->user->name} is already up to date (last entered {$latest->administered_at->format('M j, Y')}). A follow-up opens automatically at the next therapy milestone, or an admin can reset a bad entry."
+                    : "{$instrument->name} cannot be entered for {$participant->user->name} right now."]);
         }
 
-        $view = $this->surveyView($instrument);
+        $view = $this->surveyView($instrument, $mode['type'], $mode['milestone_key'], $followUp);
         $view['survey']['store_route_name'] = 'staff.interviews.store';
         $view['survey']['route_params'] = ['instrument' => $instrument, 'participant' => $participant];
         $view['enteringFor'] = $participant->loadMissing('user');
@@ -104,17 +111,32 @@ class AssessmentController extends Controller
             return $this->redirectAwaitingConsent($participant);
         }
 
-        if ($this->baselineResult($participant, $instrument)) {
+        $followUp = app(AssessmentFollowUp::class);
+        $mode = $this->resolveAdministrationMode($followUp, $participant, $instrument);
+        if ($mode === null) {
             return redirect()
                 ->route('staff.interviews.index')
-                ->withErrors(['interview' => "{$instrument->name} was already entered for {$participant->user->name}. Nothing was saved."]);
+                ->withErrors(['interview' => "{$instrument->name} was not saved for {$participant->user->name} — no open baseline or follow-up window."]);
         }
 
-        $this->recordSurvey($request, $scorer, $recommendations, $participant, $instrument, $request->user());
+        $this->recordSurvey(
+            $request,
+            $scorer,
+            $recommendations,
+            $participant,
+            $instrument,
+            $request->user(),
+            $mode['type'],
+            $mode['milestone_key']
+        );
+
+        $label = $mode['type'] === AdministrationType::Reassessment
+            ? $followUp->milestoneLabel($mode['milestone_key']).' follow-up'
+            : 'baseline';
 
         return redirect()
             ->route('staff.interviews.index')
-            ->with('status', "Saved {$instrument->name} for {$participant->user->name} (User ID {$participant->user_id}).");
+            ->with('status', "Saved {$instrument->name} ({$label}) for {$participant->user->name} (User ID {$participant->user_id}).");
     }
 
     protected function redirectAwaitingConsent(Participant $participant): RedirectResponse
@@ -135,43 +157,69 @@ class AssessmentController extends Controller
         $instrument = Instrument::query()->where('slug', $slug)->firstOrFail();
         abort_if($instrument->isStaffAdministered(), 404);
 
-        if ($this->baselineResult($participant, $instrument)) {
+        $followUp = app(AssessmentFollowUp::class);
+        $mode = $this->resolveAdministrationMode($followUp, $participant, $instrument);
+        if ($mode === null) {
             $label = $this->baselineSurvey($slug)['label'];
 
             return redirect()
                 ->route('participant.dashboard')
-                ->with('status', "You have already completed the baseline {$label}.");
+                ->with('status', "You have already completed the {$label} survey for the current period.");
         }
 
-        return view('assessments.survey', $this->surveyView($instrument));
+        return view('assessments.survey', $this->surveyView($instrument, $mode['type'], $mode['milestone_key'], $followUp));
+    }
+
+    /**
+     * @return array{type: AdministrationType, milestone_key: ?string}|null
+     */
+    protected function resolveAdministrationMode(AssessmentFollowUp $followUp, Participant $participant, Instrument $instrument): ?array
+    {
+        if (! $followUp->baselineResult($participant, $instrument)) {
+            return [
+                'type' => AdministrationType::Baseline,
+                'milestone_key' => null,
+            ];
+        }
+
+        $milestoneKey = $followUp->nextOpenMilestone($participant, $instrument);
+        if ($milestoneKey === null) {
+            return null;
+        }
+
+        return [
+            'type' => AdministrationType::Reassessment,
+            'milestone_key' => $milestoneKey,
+        ];
     }
 
     /**
      * @return array{survey: array<string, mixed>, instrument: Instrument, items: array<int, array<string, mixed>>, labels: array<int|string, string>}
      */
-    protected function surveyView(Instrument $instrument): array
-    {
+    protected function surveyView(
+        Instrument $instrument,
+        AdministrationType $type = AdministrationType::Baseline,
+        ?string $milestoneKey = null,
+        ?AssessmentFollowUp $followUp = null
+    ): array {
         $survey = $this->baselineSurvey($instrument->slug);
+        $survey = $this->mergeInstrumentSurveyCopy($survey, $instrument);
+
+        if ($type === AdministrationType::Reassessment && $milestoneKey) {
+            $followUp ??= app(AssessmentFollowUp::class);
+            $label = $followUp->milestoneLabel($milestoneKey);
+            $survey['title'] = "{$survey['label']} — {$label} follow-up";
+            $survey['description'] = "This is your {$label} follow-up. Your earlier answers stay on file for progress tracking.";
+        }
+
         [$items, $labels] = $this->resolveSurveyContent($instrument, $survey);
 
         return [
-            'survey' => $this->withSurveyRouteParams(
-                $this->mergeInstrumentSurveyCopy($survey, $instrument),
-                $instrument
-            ),
+            'survey' => $this->withSurveyRouteParams($survey, $instrument),
             'instrument' => $instrument,
             'items' => $items,
             'labels' => $labels,
         ];
-    }
-
-    protected function baselineResult(Participant $participant, Instrument $instrument): ?AssessmentResult
-    {
-        return AssessmentResult::query()
-            ->where('participant_id', $participant->id)
-            ->where('instrument_id', $instrument->id)
-            ->where('administration_type', AdministrationType::Baseline)
-            ->first();
     }
 
     protected function storeBaselineSurvey(Request $request, InstrumentScorer $scorer, TreatmentRecommendationService $recommendations, string $slug): RedirectResponse
@@ -185,12 +233,33 @@ class AssessmentController extends Controller
         $instrument = Instrument::query()->where('slug', $slug)->firstOrFail();
         abort_if($instrument->isStaffAdministered(), 404);
 
-        $survey = $this->recordSurvey($request, $scorer, $recommendations, $participant, $instrument, null);
+        $followUp = app(AssessmentFollowUp::class);
+        $mode = $this->resolveAdministrationMode($followUp, $participant, $instrument);
+        if ($mode === null) {
+            return redirect()
+                ->route('participant.dashboard')
+                ->withErrors(['assessment' => 'This survey is already complete for the current period.']);
+        }
+
+        $survey = $this->recordSurvey(
+            $request,
+            $scorer,
+            $recommendations,
+            $participant,
+            $instrument,
+            null,
+            $mode['type'],
+            $mode['milestone_key']
+        );
 
         $completionMessage = $instrument->scoring_config['completion_message'] ?? null;
-        $message = filled($completionMessage)
-            ? trim((string) $completionMessage)
-            : "Thank you for completing the {$survey['label']} survey. Your responses have been recorded for your care team.";
+        if ($mode['type'] === AdministrationType::Reassessment && $mode['milestone_key']) {
+            $message = "Thank you for completing the {$followUp->milestoneLabel($mode['milestone_key'])} follow-up for {$survey['label']}. Your earlier results are still saved.";
+        } else {
+            $message = filled($completionMessage)
+                ? trim((string) $completionMessage)
+                : "Thank you for completing the {$survey['label']} survey. Your responses have been recorded for your care team.";
+        }
 
         return redirect()
             ->route('participant.dashboard')
@@ -198,12 +267,20 @@ class AssessmentController extends Controller
     }
 
     /**
-     * Validate, score, and save one baseline administration. Returns the merged survey config.
+     * Validate, score, and save one administration. Returns the merged survey config.
      *
      * @return array<string, mixed>
      */
-    protected function recordSurvey(Request $request, InstrumentScorer $scorer, TreatmentRecommendationService $recommendations, Participant $participant, Instrument $instrument, ?User $enteredBy): array
-    {
+    protected function recordSurvey(
+        Request $request,
+        InstrumentScorer $scorer,
+        TreatmentRecommendationService $recommendations,
+        Participant $participant,
+        Instrument $instrument,
+        ?User $enteredBy,
+        AdministrationType $administrationType = AdministrationType::Baseline,
+        ?string $milestoneKey = null
+    ): array {
         $slug = $instrument->slug;
         $survey = $this->mergeInstrumentSurveyCopy($this->baselineSurvey($slug), $instrument);
         [$items, $labels] = $this->resolveSurveyContent($instrument, $survey);
@@ -260,7 +337,8 @@ class AssessmentController extends Controller
         $result = AssessmentResult::query()->create([
             'participant_id' => $participant->id,
             'instrument_id' => $instrument->id,
-            'administration_type' => AdministrationType::Baseline,
+            'administration_type' => $administrationType,
+            'milestone_key' => $milestoneKey,
             'total_score' => $score['total'],
             'item_responses' => [
                 'fields' => $fieldResponses,

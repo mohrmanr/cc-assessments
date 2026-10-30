@@ -48,8 +48,13 @@
                         <p class="text-sm font-semibold text-indigo-900">Step 4 — Baseline surveys</p>
                         <p class="text-sm text-indigo-800 mt-1">Complete each baseline survey so your care team has a starting point.</p>
                     </div>
+                @elseif ($followUpDue)
+                    <div class="rounded-md bg-amber-50 border border-amber-200 p-4">
+                        <p class="text-sm font-semibold text-amber-900">Follow-up surveys due</p>
+                        <p class="text-sm text-amber-900 mt-1">Your earlier answers stay on file. Complete each open follow-up so your care team can track progress.</p>
+                    </div>
                 @else
-                    <p class="text-sm text-gray-600">Baseline surveys complete.</p>
+                    <p class="text-sm text-gray-600">Baseline surveys complete. Follow-ups open automatically at your therapy milestones.</p>
                 @endif
 
                 <div class="grid md:grid-cols-3 gap-4">
@@ -60,7 +65,9 @@
                                     <p class="font-semibold text-gray-900">{{ $survey['label'] }}</p>
                                     <p class="mt-1 text-sm text-gray-600">{{ $survey['description'] }}</p>
                                 </div>
-                                @if ($survey['completed'])
+                                @if ($survey['follow_up_due'])
+                                    <span class="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">Follow-up due</span>
+                                @elseif ($survey['completed'])
                                     <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Complete</span>
                                 @elseif (! $consented)
                                     <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">Locked</span>
@@ -69,7 +76,19 @@
                                 @endif
                             </div>
 
-                            @if ($survey['completed'])
+                            @if ($survey['follow_up_due'])
+                                <p class="mt-3 text-sm text-gray-700">
+                                    {{ $survey['follow_up_label'] }} follow-up is open. Your previous results remain available for progress tracking.
+                                </p>
+                                @if ($survey['result'])
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        Last completed {{ $survey['result']->administered_at->format('M j, Y g:i A') }}
+                                    </p>
+                                @endif
+                                <a href="{{ route($survey['route_name'], $survey['route_params'] ?? []) }}" class="mt-3 inline-flex rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
+                                    Start {{ $survey['follow_up_label'] }} follow-up
+                                </a>
+                            @elseif ($survey['completed'])
                                 <p class="mt-3 text-sm text-gray-700">
                                     Thank you for completing this survey. Your responses have been shared with your care team.
                                 </p>
@@ -87,9 +106,9 @@
                     @endforeach
                 </div>
 
-                @if ($consented && $baselineDone)
+                @if ($consented && $baselineDone && ! $followUpDue)
                     <div class="rounded-md bg-green-50 border border-green-100 p-4 text-sm text-green-900">
-                        Thank you for completing your baseline surveys. Your care team will review your responses.
+                        Thank you for completing your surveys. Your care team will review your responses.
                     </div>
                 @endif
             </div>

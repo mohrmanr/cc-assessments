@@ -58,10 +58,25 @@
                                     </td>
                                     @foreach ($instruments as $instrument)
                                         @php
-                                            $result = $participant->assessmentResults->firstWhere('instrument_id', $instrument->id);
+                                            $instrumentResults = $participant->assessmentResults->where('instrument_id', $instrument->id)->values();
+                                            $result = $instrumentResults->first();
+                                            $openMilestone = $followUp->nextOpenMilestone($participant, $instrument, $instrumentResults);
                                         @endphp
                                         <td class="px-4 py-3 align-top">
-                                            @if ($result)
+                                            @if ($openMilestone)
+                                                <span class="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">Follow-up due</span>
+                                                @if ($result)
+                                                    <p class="mt-1 text-xs text-gray-500">
+                                                        Last {{ $result->administered_at->format('M j, Y') }}
+                                                        @if ($result->enteredBy)
+                                                            by {{ $result->enteredBy->name }}
+                                                        @endif
+                                                    </p>
+                                                @endif
+                                                <a href="{{ route('staff.interviews.show', [$instrument, $participant]) }}" class="mt-2 inline-flex rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">
+                                                    Enter {{ $followUp->milestoneLabel($openMilestone) }} follow-up
+                                                </a>
+                                            @elseif ($result)
                                                 <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Entered</span>
                                                 <p class="mt-1 text-xs text-gray-500">
                                                     {{ $result->administered_at->format('M j, Y') }}

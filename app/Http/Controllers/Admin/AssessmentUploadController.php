@@ -228,23 +228,15 @@ class AssessmentUploadController extends Controller
         $instrumentLabel = $result->instrument?->version
             ?: ($result->instrument?->name ?? 'assessment');
         $participantId = $result->participant_id;
-        $instrumentId = $result->instrument_id;
 
-        // Clear every baseline for this participant + instrument so the dashboard
-        // flips back to Pending / Start (not leftover duplicate rows).
-        $deleted = AssessmentResult::query()
-            ->where('participant_id', $participantId)
-            ->where('instrument_id', $instrumentId)
-            ->where(
-                'administration_type',
-                $result->administration_type instanceof \BackedEnum
-                    ? $result->administration_type->value
-                    : $result->administration_type
-            )
-            ->delete();
+        // Delete only this administration so earlier progress rows stay available.
+        $result->treatmentRecommendations()->delete();
+        $result->delete();
+        $deleted = 1;
 
-        $message = "Reset {$instrumentLabel} for {$participantName} ({$deleted} result".($deleted === 1 ? '' : 's').' removed). '
-            .'Ask them to refresh their dashboard — the survey should show Pending so they can start again.';
+        $message = "Reset {$instrumentLabel} for {$participantName} ({$deleted} result removed). "
+            .'Other saved administrations for this survey are unchanged. '
+            .'Ask them to refresh their dashboard if they need to enter that period again.';
 
         if ($request->boolean('return_to_results') && $participantId) {
             return redirect()
