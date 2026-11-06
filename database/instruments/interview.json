@@ -1,0 +1,623 @@
+{
+  "slug": "interview",
+  "name": "Semi-structured Interview",
+  "version": "Interview",
+  "domain": "intake",
+  "administered_by": "staff",
+  "description": "Staff-entered eligibility and clinical intake interview. Participants do not see this assessment on their dashboard.",
+  "instructions": "Complete during or immediately after the interview. Required questions are marked. Optional questions can be left blank. Confirm the participant knows how to signal a break before you begin.",
+  "intro": [
+    "Thank you for meeting with me. Today's conversation helps us see whether this study is a good fit for you, and whether it is a safe time for you to start trauma treatment.",
+    "I will ask about your current situation, your health and medications, and, briefly, the kinds of difficult experiences that bring you here. I will not ask you to describe those experiences in detail today.",
+    "Taking part is completely voluntary. The participant can skip any question, take a break, or stop at any point without affecting care. What they tell you is confidential under a study ID, with legal exceptions for serious risk of harm to self or others, or abuse or neglect of a child.",
+    "Enter answers for the selected participant. Their Assessment Portal User ID is already linked on this form.",
+    "C-SSRS scoring guide: Yes to 1 or 2 = low risk; Yes to 3 = medium risk; Yes to 4, 5, or 6 = high risk. Follow the protocol guide for imminent risk, elevated non-imminent risk, current danger from another person, mandated reporting, and active psychosis or severe dissociation."
+  ],
+  "closing": "End with a brief check-in. If distress is higher than at the start, spend a few minutes grounding before the person leaves. Explain next steps and provide study contact information, 988, and local crisis resources. If not eligible, explain why in plain terms and provide at least one concrete referral.",
+  "scoring_config": {
+    "method": "none"
+  },
+  "items": [
+    {
+      "id": "verbal_consent_date",
+      "text": "Verbal consent date (MM/DD/YYYY). Date the person agreed to the semi-structured interview.",
+      "type": "text"
+    },
+    {
+      "id": "age",
+      "text": "What is your age? (eligibility is 18 years or older)",
+      "type": "number"
+    },
+    {
+      "id": "session_language",
+      "text": "What language are you most comfortable speaking in sessions? (Fluent English in sessions is required.)",
+      "type": "text"
+    },
+    {
+      "id": "current_residence",
+      "text": "Where do you currently live? (State and county is enough)",
+      "type": "text"
+    },
+    {
+      "id": "living_ny_six_months",
+      "text": "Over the next six months do you expect to be living in New York State the whole time? (Any planned moves, extended travel, school terms out of state, or seasonal residence elsewhere?)",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "living_ny_six_months_explain",
+      "text": "If no to living in New York State for six months, please explain.",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "video_from_ny",
+      "text": "Sessions will be by video. Can you attend from a place inside New York State the whole time? Do you have a private, safe space in New York where you can talk without being overheard? Do you have a reliable device and internet connection? (Eligibility flag: if the participant cannot be in NY for the full treatment period, they are not eligible.)",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "session_availability",
+      "text": "What days and times are realistic for weekly sessions? Is transportation or childcare a barrier? (Note mornings/afternoons/evenings and days of week.)",
+      "type": "text"
+    },
+    {
+      "id": "trauma_pattern",
+      "text": "In general terms, what kind of experience or experiences bring you to trauma treatment now?",
+      "type": "choice",
+      "options": {
+        "1": "Single event",
+        "2": "Several events",
+        "3": "Went on over time"
+      }
+    },
+    {
+      "id": "trauma_timing",
+      "text": "Roughly when did it happen, or when did it start and stop? (Age or year is enough. For complex PTSD, a general time period such as \"childhood\" is enough.)",
+      "type": "text"
+    },
+    {
+      "id": "index_event",
+      "text": "Of these experiences, can you identify an incident or a time period that bothers you most now? (This becomes the index event for the PCL-5.)",
+      "type": "text"
+    },
+    {
+      "id": "trauma_ongoing",
+      "text": "Is any of this still happening? Are you in contact with the person or situation involved? (If yes, complete the current-danger items in Section E.)",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "why_seek_treatment_now",
+      "text": "What made NOW the time to look for treatment? (If the participant begins giving detail, gently redirect: \"Thank you; that's enough for today.\")",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "day_to_day_functioning",
+      "text": "How are you managing day to day: sleep, eating, work or school, relationships?",
+      "type": "text"
+    },
+    {
+      "id": "coping_strategies",
+      "text": "When things get overwhelming, what do you do to get through it? What helps, and what makes it worse?",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "support_during_treatment",
+      "text": "Who could you turn to for support during treatment, if it gets hard for a while?",
+      "type": "text"
+    },
+    {
+      "id": "other_major_stressors",
+      "text": "Are you dealing with any other major stressors right now (housing, legal, medical, a loss)?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "other_major_stressors_comment",
+      "text": "Comments about other major stressors",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "feelings_about_activation",
+      "text": "Trauma treatment can bring up difficult feelings for a time before things improve. How do you feel about that?",
+      "type": "text"
+    },
+    {
+      "id": "medical_conditions",
+      "text": "Do you have any medical conditions, or a pregnancy, that we should take into account?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "medical_conditions_comment",
+      "text": "Comments about medical conditions or pregnancy",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "current_medications",
+      "text": "What medications are you taking right now, including anything for sleep, anxiety, mood, or pain? For each: name, dose, how often, and who prescribes it.",
+      "type": "text"
+    },
+    {
+      "id": "benzodiazepines",
+      "text": "Do you take any benzodiazepines, such as alprazolam (Xanax), clonazepam (Klonopin), lorazepam (Ativan), or diazepam (Valium)?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "benzodiazepines_comment",
+      "text": "Benzodiazepine details (scheduled daily or as needed? How often in the past month? Would you typically take one before something stressful, such as a session?)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "other_sedating_meds",
+      "text": "Do you use other sedating medications, such as sleep aids (zolpidem), gabapentin or pregabalin, opioid pain medications, or sedating antihistamines?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "other_sedating_meds_comment",
+      "text": "Comments about other sedating medications",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "psych_med_changes",
+      "text": "Have any psychiatric medications been started, stopped, or changed in dose in the last 4 weeks? Are any changes planned?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "psych_med_changes_comment",
+      "text": "Comments about psychiatric medication changes",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "coordinate_prescriber",
+      "text": "Would you be willing for us to coordinate with your prescriber if questions come up about your medications? (Requires a signed release.)",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "coordinate_prescriber_comment",
+      "text": "Comments about coordinating with the prescriber",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "alcohol_use",
+      "text": "In a typical week, how many days do you drink alcohol? On those days, how many drinks? (Any days with 4 or more [women] / 5 or more [men] in the past month?)",
+      "type": "text"
+    },
+    {
+      "id": "cannabis_use",
+      "text": "Do you use cannabis?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "cannabis_use_comment",
+      "text": "Cannabis details (how often and in what form)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "other_substances_past_year",
+      "text": "In the past year, have you used any other substances: stimulants, opioids not prescribed to you, cocaine, hallucinogens or psychedelics, ketamine, or others?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "other_substances_comment",
+      "text": "Comments about other substances",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "substances_to_cope",
+      "text": "Do you ever use alcohol or other substances to cope with memories, nightmares, or feelings related to what happened?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "substances_to_cope_comment",
+      "text": "Comments about using substances to cope",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "substance_treatment_history",
+      "text": "Have you ever had treatment for substance use? Are you in recovery or receiving support now?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "substance_treatment_comment",
+      "text": "Comments about substance use treatment or recovery",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "avoid_alcohol_cannabis_24h",
+      "text": "Would you be willing to avoid alcohol and cannabis for 24 hours before sessions?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "cssrs_wish_dead",
+      "text": "C-SSRS 1: In the past month, have you wished you were dead or wished you could go to sleep and not wake up?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "cssrs_thoughts_killing",
+      "text": "C-SSRS 2: In the past month, have you actually had any thoughts of killing yourself? (If Yes, complete C-SSRS 3-5. If No, skip to C-SSRS lifetime behavior.)",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "cssrs_method",
+      "text": "C-SSRS 3: Have you been thinking about how you might do this?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "cssrs_method_comment",
+      "text": "Comments for C-SSRS method thinking",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "cssrs_intent",
+      "text": "C-SSRS 4: Have you had these thoughts and had some intention of acting on them?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "cssrs_intent_comment",
+      "text": "Comments for C-SSRS intent",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "cssrs_plan",
+      "text": "C-SSRS 5: Have you started to work out or worked out the details of how to kill yourself? Do you intend to carry out this plan?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "cssrs_plan_comment",
+      "text": "Comments for C-SSRS plan",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "cssrs_lifetime_behavior",
+      "text": "C-SSRS 6: Have you ever done anything, started to do anything, or prepared to do anything to end your life? (If yes, ask whether this was within the past three months.)",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "cssrs_lifetime_behavior_comment",
+      "text": "Comments for C-SSRS lifetime behavior (include timing if within past three months)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "feel_safe_where_live",
+      "text": "Do you feel safe where you live right now?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "feel_safe_where_live_comment",
+      "text": "Comments about feeling safe where you live",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "current_harm_threat",
+      "text": "Is anyone currently hurting, threatening, or controlling you? (Are you in ongoing contact with the person who harmed you?)",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "current_harm_threat_comment",
+      "text": "Comments about current harm, threats, or control",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "thoughts_harm_others",
+      "text": "Have you had thoughts of harming someone else recently?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "thoughts_harm_others_comment",
+      "text": "Comments about thoughts of harming others",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "dissociation",
+      "text": "Do you ever lose time, find yourself somewhere without knowing how you got there, or feel like you or the world isn't real?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "dissociation_comment",
+      "text": "Dissociation details (how often, and how much it interferes)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "psychosis_symptoms",
+      "text": "Have you ever heard or seen things others couldn't, or felt people were trying to harm you in ways others didn't believe? Is that happening now?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "psychosis_symptoms_comment",
+      "text": "Comments about psychosis or reality-testing concerns",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "psych_hospitalization",
+      "text": "Have you ever been hospitalized for psychiatric reasons?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "psych_hospitalization_comment",
+      "text": "Psychiatric hospitalization details (when most recently)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "current_other_therapist",
+      "text": "Are you currently seeing another therapist or counselor? (Concurrent trauma-focused therapy is an exclusion; supportive care may be allowed.)",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "current_other_therapist_comment",
+      "text": "Comments about current other therapy",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "prior_trauma_therapy",
+      "text": "Have you had therapy for trauma before?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "prior_trauma_therapy_comment",
+      "text": "Prior trauma therapy details (what kind, for how long, what was helpful or unhelpful)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "prior_treatment_ended_early",
+      "text": "Did any previous treatment end early?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "prior_treatment_ended_early_comment",
+      "text": "Comments about previous treatment ending early",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "prescriber_pcp",
+      "text": "Who is your prescriber or primary care provider, if any?",
+      "type": "text"
+    },
+    {
+      "id": "other_research_studies",
+      "text": "Are you involved in any other research studies right now?",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      },
+      "required": false
+    },
+    {
+      "id": "prior_qualitative_research",
+      "text": "Have you been involved in a qualitative research study before this? (exclusion)",
+      "type": "choice",
+      "options": {
+        "1": "Yes",
+        "0": "No"
+      }
+    },
+    {
+      "id": "prior_qualitative_research_comment",
+      "text": "Comments about prior qualitative research",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "study_understanding",
+      "text": "In your own words, what do you understand this study involves? (Checks comprehension of consent; correct misunderstandings.)",
+      "type": "text"
+    },
+    {
+      "id": "transcription_comfort",
+      "text": "Your treatment sessions will be transcribed, and the transcripts, with names and identifying details removed, will be analyzed by the research team. How do you feel about that? (Is there anything that would make transcription feel unsafe or uncomfortable?)",
+      "type": "text"
+    },
+    {
+      "id": "treatment_hopes",
+      "text": "What are you hoping to get from treatment?",
+      "type": "text"
+    },
+    {
+      "id": "leave_study_keep_treatment",
+      "text": "If you decide to leave the study later, you can keep receiving trauma-focused treatment. Does that make sense to you?",
+      "type": "text"
+    },
+    {
+      "id": "anything_else",
+      "text": "Is there anything else you think we should know?",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "distress_0_10",
+      "text": "Closing debrief: On a scale of 0-10, how distressed do you feel right now, compared with when you started?",
+      "type": "number",
+      "required": false
+    },
+    {
+      "id": "distress_follow_up",
+      "text": "If distress is notably higher than at the start, note grounding used and next steps explained.",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "eligibility_decision",
+      "text": "Eligibility summary decision (complete after the interview; PI reviews before enrollment)",
+      "type": "choice",
+      "options": {
+        "1": "Eligible",
+        "2": "Not eligible",
+        "3": "Deferred"
+      },
+      "required": false
+    },
+    {
+      "id": "eligibility_checklist",
+      "text": "Eligibility checklist notes (age 18+, NY for full period, weekly availability, language match, index trauma, PCL-5 threshold, no regular/pre-session benzodiazepines, stable psychotropics 4 weeks, substance use below exclusion, no imminent suicide risk, no current danger from another person, no active psychosis/severe dissociation, no concurrent trauma-focused therapy, understands study/consents to transcription).",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "referrals_given",
+      "text": "Referrals given",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "deferred_reassess_date",
+      "text": "If deferred, reassess on (date)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "pi_review_notes",
+      "text": "PI review notes / signature date",
+      "type": "text",
+      "required": false
+    }
+  ]
+}

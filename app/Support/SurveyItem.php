@@ -8,7 +8,7 @@ class SurveyItem
 
     public const NUMBER_MAX = 999;
 
-    public const TEXT_MAX = 1000;
+    public const TEXT_MAX = 5000;
 
     /**
      * @param  array<string, mixed>  $item
