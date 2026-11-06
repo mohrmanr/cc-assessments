@@ -16,18 +16,17 @@
             <div class="grid sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">First name</label>
-                    <input type="text" name="first_name" value="{{ old('first_name', 'Alex') }}" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="text" name="first_name" value="{{ old('first_name') }}" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Last name</label>
-                    <input type="text" name="last_name" value="{{ old('last_name', 'Rivera') }}" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="text" name="last_name" value="{{ old('last_name') }}" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm">
                 </div>
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" name="email" value="{{ old('email', 'alex.rivera.demo'.time().'@example.com') }}" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm">
-                <p class="text-xs text-gray-500 mt-1">Use a unique email for each demo run.</p>
+                <input type="email" name="email" value="{{ old('email') }}" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm">
             </div>
 
             @if ($errors->any())
